@@ -229,14 +229,14 @@ A fresh server can be provisioned using documented steps.
 
 ### Catalog
 
-- [ ] Add categories
-- [ ] Add listings
-- [ ] Create listing
-- [ ] Edit listing
-- [ ] Change status
-- [ ] My listings
-- [ ] Public listing
-- [ ] Search/filter/sort
+- [x] Add categories
+- [x] Add listings
+- [x] Create listing
+- [x] Edit listing
+- [x] Change status
+- [x] My listings
+- [x] Public listing
+- [x] Search/filter/sort
 - [ ] Seller profile
 - [ ] Seller catalog
 

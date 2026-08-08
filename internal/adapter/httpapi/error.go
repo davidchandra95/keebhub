@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/davidchandra95/keebhub/internal/app"
+	"github.com/davidchandra95/keebhub/internal/domain"
 	"github.com/labstack/echo/v5"
 	"go.uber.org/zap"
 )
@@ -85,6 +87,31 @@ func classifyError(err error) (int, string, string, map[string]string) {
 	var apiError *Error
 	if errors.As(err, &apiError) {
 		return apiError.Status, apiError.Code, apiError.Message, apiError.Fields
+	}
+	var badRequest *app.BadRequestError
+	if errors.As(err, &badRequest) {
+		code := badRequest.Code
+		if code == "" {
+			code = "bad_request"
+		}
+		message := badRequest.Message
+		if message == "" {
+			message = "The request was malformed."
+		}
+		return http.StatusBadRequest, code, message, badRequest.Fields
+	}
+	var validation *domain.ValidationError
+	if errors.As(err, &validation) {
+		return http.StatusUnprocessableEntity, "validation_failed", "Request validation failed.", validation.Fields
+	}
+	if errors.Is(err, domain.ErrNotFound) {
+		return http.StatusNotFound, "not_found", "The requested resource was not found.", nil
+	}
+	if errors.Is(err, domain.ErrForbidden) {
+		return http.StatusForbidden, "forbidden", "This operation is not allowed.", nil
+	}
+	if errors.Is(err, domain.ErrConflict) {
+		return http.StatusConflict, "conflict", "The requested state change is not allowed.", nil
 	}
 
 	status := echo.StatusCode(err)

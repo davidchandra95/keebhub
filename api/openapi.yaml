@@ -7,9 +7,9 @@ info:
     identifier: LicenseRef-Proprietary
   description: >-
     Public HTTP contract for KeebHub v1. Health, readiness, Discord authentication,
-    logout, and the current-user read are implemented. Operations marked planned are
-    implemented by later vertical slices without changing this contract unless a
-    reviewed contract change is made.
+    logout, the current-user read, and the Phase 2 catalog foundation are implemented.
+    Operations marked planned are implemented by later vertical slices without changing
+    this contract unless a reviewed contract change is made.
 servers:
   - url: /
 tags:
@@ -181,7 +181,7 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
   /api/v1/categories:
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: listCategories
       summary: List active categories
@@ -200,7 +200,7 @@ paths:
                       $ref: "#/components/schemas/Category"
   /api/v1/listings:
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: searchListings
       summary: Search public active and reserved listings
@@ -223,7 +223,7 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: createListing
       summary: Create a listing
@@ -246,17 +246,23 @@ paths:
                 properties:
                   listing:
                     $ref: "#/components/schemas/Listing"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
   /api/v1/listings/{listing_id}:
     parameters:
       - $ref: "#/components/parameters/ListingID"
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: getListing
       summary: Get a listing subject to visibility rules
@@ -274,7 +280,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
     patch:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: updateListing
       summary: Update an owned listing
@@ -305,11 +311,17 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
   /api/v1/listings/{listing_id}/status:
     parameters:
       - $ref: "#/components/parameters/ListingID"
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: changeListingStatus
       summary: Apply an allowed listing status transition
@@ -345,6 +357,14 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/users/{handle}:
     get:
       x-implementation-status: planned
@@ -391,7 +411,7 @@ paths:
           $ref: "#/components/responses/NotFound"
   /api/v1/me/listings:
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: listOwnedListings
       summary: List the current user's listings
@@ -408,6 +428,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListingPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/v1/me/catalog-export:
@@ -782,6 +804,18 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Conflict:
       description: Current resource state prevents the operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RequestTooLarge:
+      description: Request body exceeds the endpoint limit.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    UnsupportedMediaType:
+      description: Request content type is not application/json.
       content:
         application/json:
           schema:
