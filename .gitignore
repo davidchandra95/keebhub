@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.idea/
+.vscode/
+
+/bin/
+/coverage/
+*.out
+
+/web/dist/
+/web/node_modules/
+/web/*.tsbuildinfo

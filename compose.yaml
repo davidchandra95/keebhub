@@ -1,0 +1,70 @@
+name: keebhub
+
+x-app-environment: &app-environment
+  APP_ENV: ${APP_ENV:-development}
+  APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+  DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+  DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+  DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:-http://localhost:8080/auth/discord/callback}
+  DATABASE_URL: postgres://${POSTGRES_USER:-keebhub}:${POSTGRES_PASSWORD:-keebhub}@postgres:5432/${POSTGRES_DB:-keebhub}?sslmode=disable
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-keebhub_session}
+  DB_MAX_CONNS: ${DB_MAX_CONNS:-10}
+  DB_MIN_CONNS: ${DB_MIN_CONNS:-1}
+  READINESS_TIMEOUT: ${READINESS_TIMEOUT:-1s}
+  SHUTDOWN_TIMEOUT: ${SHUTDOWN_TIMEOUT:-15s}
+
+services:
+  postgres:
+    image: postgres:18.4-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-keebhub}
+      POSTGRES_USER: ${POSTGRES_USER:-keebhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-keebhub}
+    ports:
+      - "${POSTGRES_PORT:-54329}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      target: runtime
+    environment: *app-environment
+    entrypoint: ["/app/migrate"]
+    command: ["up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runtime
+    environment: *app-environment
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    init: true
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

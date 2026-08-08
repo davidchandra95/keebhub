@@ -1,0 +1,1144 @@
+openapi: 3.1.0
+info:
+  title: KeebHub API
+  version: 0.1.0
+  license:
+    name: All rights reserved
+    identifier: LicenseRef-Proprietary
+  description: >-
+    Public HTTP contract for KeebHub v1. Health, readiness, Discord authentication,
+    logout, and the current-user read are implemented. Operations marked planned are
+    implemented by later vertical slices without changing this contract unless a
+    reviewed contract change is made.
+servers:
+  - url: /
+tags:
+  - name: Health
+    description: Process liveness and database-aware readiness.
+  - name: Authentication
+    description: Discord OAuth2 and local session lifecycle.
+  - name: Profile
+    description: Current-user and public seller profiles.
+  - name: Catalog
+    description: Categories, listings, and seller catalog export.
+  - name: Chat
+    description: Listing conversations, messages, and user event delivery.
+  - name: Trust
+    description: User-submitted reports for later operator review.
+
+# Public access is the default. Authenticated operations override this value.
+security: []
+
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      summary: Check process liveness
+      responses:
+        "200":
+          description: The process is alive.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /readyz:
+    get:
+      tags: [Health]
+      operationId: getReadiness
+      summary: Check service readiness
+      responses:
+        "200":
+          description: The service and PostgreSQL are ready.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /auth/discord:
+    get:
+      x-implementation-status: implemented
+      tags: [Authentication]
+      operationId: startDiscordLogin
+      summary: Start Discord OAuth2 login
+      parameters:
+        - name: return_to
+          in: query
+          required: false
+          description: Relative internal application path.
+          schema:
+            type: string
+            default: /
+            maxLength: 2048
+      responses:
+        "302":
+          description: Redirect to Discord authorization.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /auth/discord/callback:
+    get:
+      x-implementation-status: implemented
+      tags: [Authentication]
+      operationId: finishDiscordLogin
+      summary: Finish Discord OAuth2 login
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: error
+          in: query
+          required: false
+          description: Discord authorization error, including user denial.
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "302":
+          description: Session created and redirected internally, or failure redirected to the login page.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+  /auth/logout:
+    post:
+      x-implementation-status: implemented
+      tags: [Authentication]
+      operationId: logout
+      summary: Invalidate the current session
+      responses:
+        "204":
+          description: Session invalidated or already absent.
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /api/v1/me:
+    get:
+      x-implementation-status: implemented
+      tags: [Profile]
+      operationId: getCurrentUser
+      summary: Get the authenticated user
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      x-implementation-status: planned
+      tags: [Profile]
+      operationId: updateCurrentUser
+      summary: Update optional profile fields
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated current user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/categories:
+    get:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: listCategories
+      summary: List active categories
+      responses:
+        "200":
+          description: Active categories in display order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Category"
+  /api/v1/listings:
+    get:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: searchListings
+      summary: Search public active and reserved listings
+      parameters:
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/CategoryFilter"
+        - $ref: "#/components/parameters/ConditionFilter"
+        - $ref: "#/components/parameters/MinimumPrice"
+        - $ref: "#/components/parameters/MaximumPrice"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Matching public listings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListingPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    post:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: createListing
+      summary: Create a listing
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateListingRequest"
+      responses:
+        "201":
+          description: Listing created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listing]
+                properties:
+                  listing:
+                    $ref: "#/components/schemas/Listing"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/listings/{listing_id}:
+    parameters:
+      - $ref: "#/components/parameters/ListingID"
+    get:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: getListing
+      summary: Get a listing subject to visibility rules
+      responses:
+        "200":
+          description: Listing details.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listing]
+                properties:
+                  listing:
+                    $ref: "#/components/schemas/Listing"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: updateListing
+      summary: Update an owned listing
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateListingRequest"
+      responses:
+        "200":
+          description: Listing updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listing]
+                properties:
+                  listing:
+                    $ref: "#/components/schemas/Listing"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/listings/{listing_id}/status:
+    parameters:
+      - $ref: "#/components/parameters/ListingID"
+    post:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: changeListingStatus
+      summary: Apply an allowed listing status transition
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [status]
+              properties:
+                status:
+                  $ref: "#/components/schemas/ListingStatus"
+      responses:
+        "200":
+          description: Listing status changed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listing]
+                properties:
+                  listing:
+                    $ref: "#/components/schemas/Listing"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/users/{handle}:
+    get:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: getSellerProfile
+      summary: Get a public seller profile
+      parameters:
+        - $ref: "#/components/parameters/Handle"
+      responses:
+        "200":
+          description: Public seller profile.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    $ref: "#/components/schemas/PublicUser"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/users/{handle}/listings:
+    get:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: listSellerListings
+      summary: List public seller listings
+      parameters:
+        - $ref: "#/components/parameters/Handle"
+        - $ref: "#/components/parameters/PublicStatusFilter"
+        - $ref: "#/components/parameters/CategoryFilter"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Seller listings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListingPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/me/listings:
+    get:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: listOwnedListings
+      summary: List the current user's listings
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/OwnedStatusFilter"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Owned listings including seller-controlled states.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListingPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/me/catalog-export:
+    get:
+      x-implementation-status: planned
+      tags: [Catalog]
+      operationId: exportCatalog
+      summary: Generate a Discord catalog post
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            const: discord
+      responses:
+        "200":
+          description: Deterministic text export.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogExport"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/listings/{listing_id}/conversation:
+    parameters:
+      - $ref: "#/components/parameters/ListingID"
+    post:
+      x-implementation-status: planned
+      tags: [Chat]
+      operationId: startConversation
+      summary: Create or return the buyer's listing conversation
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Existing conversation returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationCreated"
+        "201":
+          description: Conversation created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /api/v1/conversations:
+    get:
+      x-implementation-status: planned
+      tags: [Chat]
+      operationId: listConversations
+      summary: List the current user's inbox
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Inbox page.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ConversationSummary"
+                  next_cursor:
+                    $ref: "#/components/schemas/NullableCursor"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/conversations/{conversation_id}/messages:
+    parameters:
+      - $ref: "#/components/parameters/ConversationID"
+    get:
+      x-implementation-status: planned
+      tags: [Chat]
+      operationId: listMessages
+      summary: Read or catch up conversation messages
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: before_id
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ID"
+        - name: after_id
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ID"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Conversation messages.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      x-implementation-status: planned
+      tags: [Chat]
+      operationId: sendMessage
+      summary: Persist a conversation message
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+      responses:
+        "201":
+          description: Message committed before realtime publication.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message]
+                properties:
+                  message:
+                    $ref: "#/components/schemas/Message"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /api/v1/conversations/{conversation_id}/read:
+    parameters:
+      - $ref: "#/components/parameters/ConversationID"
+    post:
+      x-implementation-status: planned
+      tags: [Chat]
+      operationId: markConversationRead
+      summary: Advance the current user's read pointer
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [last_read_message_id]
+              properties:
+                last_read_message_id:
+                  $ref: "#/components/schemas/ID"
+      responses:
+        "204":
+          description: Read pointer advanced or already ahead.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/events:
+    get:
+      x-implementation-status: planned
+      tags: [Chat]
+      operationId: streamEvents
+      summary: Stream best-effort user events
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Server-Sent Events stream with message.created events.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/reports:
+    post:
+      x-implementation-status: planned
+      tags: [Trust]
+      operationId: createReport
+      summary: Report a listing or user
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReportRequest"
+      responses:
+        "201":
+          description: Report stored for operator review.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    $ref: "#/components/schemas/ID"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: keebhub_session
+  parameters:
+    ListingID:
+      name: listing_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ID"
+    ConversationID:
+      name: conversation_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/ID"
+    Handle:
+      name: handle
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])?$"
+    SearchQuery:
+      name: q
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 100
+    CategoryFilter:
+      name: category
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 50
+    ConditionFilter:
+      name: condition
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/ListingCondition"
+    MinimumPrice:
+      name: min_price
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10000000000
+    MaximumPrice:
+      name: max_price
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10000000000
+    Sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [newest, price_asc, price_desc]
+        default: newest
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque cursor bound to the filters and sort that created it.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 2048
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    PublicStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [active, reserved]
+    OwnedStatusFilter:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/ListingStatus"
+  responses:
+    BadRequest:
+      description: Malformed request or invalid cursor.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: A valid active session is required.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: The authenticated caller may not perform this operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The resource does not exist or is not visible to the caller.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Current resource state prevents the operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationFailed:
+      description: Domain validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Request rate exceeded.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceUnavailable:
+      description: A required local dependency is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ID:
+      type: string
+      pattern: "^[1-9][0-9]*$"
+      examples: ["1001"]
+    NullableCursor:
+      anyOf:
+        - type: string
+          minLength: 1
+        - type: "null"
+    Timestamp:
+      type: string
+      format: date-time
+      examples: ["2026-08-08T12:00:00Z"]
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: ok
+    ReadinessResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          const: ready
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, request_id]
+          properties:
+            code:
+              type: string
+              pattern: "^[a-z][a-z0-9_]*$"
+            message:
+              type: string
+              minLength: 1
+            request_id:
+              type: string
+              minLength: 1
+            fields:
+              type: object
+              additionalProperties:
+                type: string
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, handle, discord_username, display_name]
+      properties:
+        id:
+          $ref: "#/components/schemas/ID"
+        handle:
+          type: string
+        discord_username:
+          type: string
+        display_name:
+          type: string
+        avatar_url:
+          type: [string, "null"]
+          format: uri
+        location:
+          type: [string, "null"]
+          maxLength: 100
+        bio:
+          type: [string, "null"]
+          maxLength: 500
+    PublicUser:
+      type: object
+      additionalProperties: false
+      required: [id, handle, display_name]
+      properties:
+        id:
+          $ref: "#/components/schemas/ID"
+        handle:
+          type: string
+        display_name:
+          type: string
+        avatar_url:
+          type: [string, "null"]
+          format: uri
+        location:
+          type: [string, "null"]
+          maxLength: 100
+        bio:
+          type: [string, "null"]
+          maxLength: 500
+    UpdateProfileRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        location:
+          type: [string, "null"]
+          maxLength: 100
+        bio:
+          type: [string, "null"]
+          maxLength: 500
+    Category:
+      type: object
+      additionalProperties: false
+      required: [id, slug, name]
+      properties:
+        id:
+          $ref: "#/components/schemas/ID"
+        slug:
+          type: string
+        name:
+          type: string
+    ListingCondition:
+      type: string
+      enum: [new, used]
+    ListingStatus:
+      type: string
+      enum: [active, reserved, sold, archived]
+    Listing:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - description
+        - price_idr
+        - quantity
+        - category
+        - condition
+        - status
+        - negotiable
+        - seller
+        - created_at
+        - updated_at
+      properties:
+        id:
+          $ref: "#/components/schemas/ID"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 5000
+        price_idr:
+          type: integer
+          minimum: 1
+          maximum: 10000000000
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        category:
+          $ref: "#/components/schemas/Category"
+        condition:
+          $ref: "#/components/schemas/ListingCondition"
+        status:
+          $ref: "#/components/schemas/ListingStatus"
+        negotiable:
+          type: boolean
+        seller:
+          $ref: "#/components/schemas/PublicUser"
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        updated_at:
+          $ref: "#/components/schemas/Timestamp"
+    ListingPage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Listing"
+        next_cursor:
+          $ref: "#/components/schemas/NullableCursor"
+    CreateListingRequest:
+      type: object
+      additionalProperties: false
+      required: [title, price_idr, category_slug, condition]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 5000
+          default: ""
+        price_idr:
+          type: integer
+          minimum: 1
+          maximum: 10000000000
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          default: 1
+        category_slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+        condition:
+          $ref: "#/components/schemas/ListingCondition"
+        negotiable:
+          type: boolean
+          default: false
+    UpdateListingRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 5000
+        price_idr:
+          type: integer
+          minimum: 1
+          maximum: 10000000000
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        category_slug:
+          type: string
+          minLength: 1
+          maxLength: 50
+        condition:
+          $ref: "#/components/schemas/ListingCondition"
+        negotiable:
+          type: boolean
+    CatalogExport:
+      type: object
+      additionalProperties: false
+      required: [format, text, catalog_url]
+      properties:
+        format:
+          type: string
+          const: discord
+        text:
+          type: string
+        catalog_url:
+          type: string
+          format: uri
+    ConversationCreated:
+      type: object
+      additionalProperties: false
+      required: [conversation, created]
+      properties:
+        conversation:
+          type: object
+          additionalProperties: false
+          required: [id]
+          properties:
+            id:
+              $ref: "#/components/schemas/ID"
+        created:
+          type: boolean
+    ConversationSummary:
+      type: object
+      additionalProperties: false
+      required: [id, listing, counterpart, unread_count]
+      properties:
+        id:
+          $ref: "#/components/schemas/ID"
+        listing:
+          type: object
+          additionalProperties: false
+          required: [id, title, status]
+          properties:
+            id:
+              $ref: "#/components/schemas/ID"
+            title:
+              type: string
+            status:
+              $ref: "#/components/schemas/ListingStatus"
+        counterpart:
+          $ref: "#/components/schemas/PublicUser"
+        last_message:
+          anyOf:
+            - $ref: "#/components/schemas/Message"
+            - type: "null"
+        unread_count:
+          type: integer
+          minimum: 0
+    Message:
+      type: object
+      additionalProperties: false
+      required: [id, sender_id, body, created_at]
+      properties:
+        id:
+          $ref: "#/components/schemas/ID"
+        sender_id:
+          $ref: "#/components/schemas/ID"
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+    CreateReportRequest:
+      type: object
+      additionalProperties: false
+      required: [target_type, target_id, reason]
+      properties:
+        target_type:
+          type: string
+          enum: [listing, user]
+        target_id:
+          $ref: "#/components/schemas/ID"
+        reason:
+          type: string
+          enum:
+            - scam_suspicion
+            - unrelated_item
+            - harassment
+            - spam
+            - misleading_listing
+            - other
+        details:
+          type: string
+          maxLength: 2000
+          default: ""
