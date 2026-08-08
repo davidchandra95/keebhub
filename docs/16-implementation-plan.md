@@ -73,6 +73,7 @@ No Discord access token is needed by the frontend.
 - status transition;
 - my listings;
 - public listing detail.
+- public marketplace search, filters, sorting, and cursor pagination.
 
 ### Gate
 
@@ -88,6 +89,9 @@ Active
 and another logged-out browser can open it.
 
 ## Phase 3 - Marketplace discovery
+
+The API portion was completed with the Phase 2 catalog foundation. A later phase
+will add the marketplace frontend experience.
 
 ### Deliverables
 
@@ -229,14 +233,14 @@ A fresh server can be provisioned using documented steps.
 
 ### Catalog
 
-- [ ] Add categories
-- [ ] Add listings
-- [ ] Create listing
-- [ ] Edit listing
-- [ ] Change status
-- [ ] My listings
-- [ ] Public listing
-- [ ] Search/filter/sort
+- [x] Add categories
+- [x] Add listings
+- [x] Create listing
+- [x] Edit listing
+- [x] Change status
+- [x] My listings
+- [x] Public listing
+- [x] Search/filter/sort
 - [ ] Seller profile
 - [ ] Seller catalog
 

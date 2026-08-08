@@ -8,6 +8,30 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Category struct {
+	ID        int64  `json:"id"`
+	Slug      string `json:"slug"`
+	Name      string `json:"name"`
+	SortOrder int32  `json:"sort_order"`
+	Active    bool   `json:"active"`
+}
+
+type Listing struct {
+	ID               int64              `json:"id"`
+	SellerID         int64              `json:"seller_id"`
+	CategoryID       int64              `json:"category_id"`
+	Title            string             `json:"title"`
+	Description      string             `json:"description"`
+	PriceIdr         int64              `json:"price_idr"`
+	Quantity         int32              `json:"quantity"`
+	Condition        string             `json:"condition"`
+	Status           string             `json:"status"`
+	ModerationStatus string             `json:"moderation_status"`
+	Negotiable       bool               `json:"negotiable"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Session struct {
 	ID         int64              `json:"id"`
 	UserID     int64              `json:"user_id"`
