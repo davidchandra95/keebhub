@@ -22,6 +22,7 @@ type Config struct {
 	AppBaseURL        string
 	Auth              Authenticator
 	BodyLimit         int64
+	Catalog           CatalogService
 	Logger            *zap.Logger
 	Now               func() time.Time
 	Pinger            Pinger
@@ -45,6 +46,7 @@ func New(cfg Config) http.Handler {
 	static := newStaticHandler(cfg.StaticDir)
 	baseURL, _ := url.Parse(cfg.AppBaseURL)
 	auth := newAuthHandlers(cfg, baseURL != nil && baseURL.Scheme == "https")
+	catalog := newCatalogHandlers(cfg)
 
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: errorHandler(logger),
@@ -73,6 +75,13 @@ func New(cfg Config) http.Handler {
 	e.GET("/auth/discord/callback", auth.discordCallback)
 	e.POST("/auth/logout", auth.logout)
 	e.GET("/api/v1/me", auth.me)
+	e.GET("/api/v1/categories", catalog.listCategories)
+	e.GET("/api/v1/listings", catalog.searchListings)
+	e.POST("/api/v1/listings", catalog.createListing)
+	e.PATCH("/api/v1/listings/:listing_id", catalog.updateListing)
+	e.POST("/api/v1/listings/:listing_id/status", catalog.changeListingStatus)
+	e.GET("/api/v1/me/listings", catalog.listOwnedListings)
+	e.GET("/api/v1/listings/:listing_id", catalog.getListing)
 
 	return e
 }
