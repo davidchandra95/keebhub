@@ -19,18 +19,21 @@ type Pinger interface {
 
 // Config contains injected HTTP adapter dependencies and transport policy.
 type Config struct {
-	AppBaseURL        string
-	Auth              Authenticator
-	BodyLimit         int64
-	Catalog           CatalogService
-	Seller            SellerService
-	Logger            *zap.Logger
-	Now               func() time.Time
-	Pinger            Pinger
-	Random            io.Reader
-	ReadinessTimeout  time.Duration
-	SessionCookieName string
-	StaticDir         string
+	AppBaseURL           string
+	Auth                 Authenticator
+	BodyLimit            int64
+	Catalog              CatalogService
+	Seller               SellerService
+	Chat                 ChatService
+	Events               EventSubscriptionSource
+	Logger               *zap.Logger
+	Now                  func() time.Time
+	Pinger               Pinger
+	Random               io.Reader
+	ReadinessTimeout     time.Duration
+	SessionCookieName    string
+	SSEKeepaliveInterval time.Duration
+	StaticDir            string
 }
 
 type healthHandlers struct {
@@ -49,6 +52,7 @@ func New(cfg Config) http.Handler {
 	auth := newAuthHandlers(cfg, baseURL != nil && baseURL.Scheme == "https")
 	catalog := newCatalogHandlers(cfg)
 	seller := newSellerHandlers(cfg)
+	chat := newChatHandlers(cfg)
 
 	e := echo.NewWithConfig(echo.Config{
 		HTTPErrorHandler: errorHandler(logger),
@@ -87,6 +91,12 @@ func New(cfg Config) http.Handler {
 	e.GET("/api/v1/listings/:listing_id", catalog.getListing)
 	e.GET("/api/v1/users/:handle/listings", seller.listSellerListings)
 	e.GET("/api/v1/users/:handle", seller.getSellerProfile)
+	e.POST("/api/v1/listings/:listing_id/conversation", chat.startConversation)
+	e.GET("/api/v1/conversations", chat.listConversations)
+	e.GET("/api/v1/conversations/:conversation_id/messages", chat.listMessages)
+	e.POST("/api/v1/conversations/:conversation_id/messages", chat.sendMessage)
+	e.POST("/api/v1/conversations/:conversation_id/read", chat.markConversationRead)
+	e.GET("/api/v1/events", chat.streamEvents)
 
 	return e
 }

@@ -23,17 +23,18 @@ The core loop is:
 2. **Structured inventory, existing-community distribution**
    - Sellers maintain one source of truth.
    - Discord remains a distribution and community channel.
-   - KeebHub generates a clean WTS post that links back to the seller catalog.
+   - Sellers can share a KeebHub catalog or listing link in their existing communities.
 
 3. **Text-first v1**
    - No listing photos.
    - No chat attachments.
    - Keep implementation and moderation surface small.
+   - Defer reporting, blocking, and operator moderation until after the first release.
 
 4. **Discord-native identity**
    - Public browsing does not require login.
    - Discord OAuth2 is the only authentication mechanism in v1.
-   - Login is required for selling, chat, account settings, and reporting.
+   - Login is required for selling, chat, and account settings.
 
 5. **Simple realtime**
    - REST for writes.
@@ -94,7 +95,6 @@ The core loop is:
 | [15 Deployment and Operations](docs/15-deployment-and-operations.md) | Docker Compose, configuration, migration, backup |
 | [16 Implementation Plan](docs/16-implementation-plan.md) | Recommended implementation order and acceptance gates |
 | [17 Roadmap](docs/17-roadmap.md) | Explicit post-v1 possibilities |
-| [18 Discord Catalog Export](docs/18-discord-catalog-export.md) | Copy-as-Discord-post feature |
 | [19 Non-functional Requirements](docs/19-non-functional-requirements.md) | Performance, availability, accessibility, compatibility |
 | [20 References](docs/20-references.md) | Primary technical references |
 
@@ -111,7 +111,7 @@ The core loop is:
 
 ## Development status
 
-The repository currently contains the backend foundation, Discord authentication, database-backed sessions, the catalog API foundation, and seller profile/catalog APIs. The catalog foundation covers categories, listing management, public detail, and marketplace search. Seller APIs provide profile updates, public profiles with active listing counts, and paginated active, reserved, and sold catalog history. The React client remains at its minimal login/health baseline. Chat, trust, and moderation operations remain planned vertical slices.
+The repository contains the backend foundation, Discord authentication, database-backed sessions, catalog APIs, seller profile/catalog APIs, and backend chat: listing-scoped conversations, persistent messages, inboxes, read pointers, and a process-local SSE stream. The catalog foundation covers categories, listing management, public detail, and marketplace search. Seller APIs provide profile updates, public profiles with active listing counts, and paginated active, reserved, and sold catalog history. The React client remains at its minimal login/health baseline, so the inbox and conversation interface, `EventSource` connection, and reconnect reconciliation remain future frontend work. Reporting, blocking, and operator moderation are post-v1 work.
 
 ## Local development
 

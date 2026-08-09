@@ -67,6 +67,8 @@ updated_at
 
 Disabled users may still have public historical listings, but cannot perform authenticated mutations.
 
+The current service enforces this state when it encounters one. v1 does not include a report-review or operator user-management flow that changes a user to `disabled`.
+
 ## 3. Listing entity
 
 ```text
@@ -95,6 +97,8 @@ updated_at
 - status must be a valid listing state;
 - moderation status must be `visible` or `removed`;
 - category must exist.
+
+`moderation_status` is an internal visibility safeguard. v1 exposes neither a report submission flow nor an operator action that changes it.
 
 ## 4. Listing state machine
 
@@ -200,7 +204,9 @@ AND message.sender_id != participant_id
 
 Do not expose read receipts to the counterpart in v1.
 
-## 9. Report entity
+## 9. Deferred post-v1 report entity
+
+This is a future design, not a v1 entity or API contract.
 
 ```text
 id
@@ -226,7 +232,7 @@ Report status:
 - `dismissed`
 - `actioned`
 
-## 10. Moderation action
+## 10. Deferred post-v1 moderation action
 
 Seller-controlled listing status and operator moderation are separate.
 
@@ -249,7 +255,7 @@ Initial actions:
 - `user_enabled`
 - `report_reviewed`
 
-Every operator mutation records an immutable moderation action in the same transaction. A moderation-removed listing is hidden from normal application APIs even if its seller status is `active`.
+If post-v1 operator mutations are introduced, each must record an immutable moderation action in the same transaction. A moderation-removed listing is hidden from normal application APIs even if its seller status is `active`.
 
 ## 11. Session
 
@@ -278,8 +284,8 @@ The raw token is kept only in the browser cookie.
 | Conversation | Chat domain |
 | Message | Chat domain |
 | Session | Auth domain |
-| Report | Trust domain |
-| Moderation action | Trust domain |
+| Report (post-v1) | Trust domain |
+| Moderation action (post-v1) | Trust domain |
 
 ## 13. Domain events
 

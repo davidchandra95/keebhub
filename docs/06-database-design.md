@@ -44,6 +44,8 @@ Suggested limits:
 - location: 100 characters;
 - bio: 500 characters.
 
+The application fails closed when it encounters a `disabled` user. v1 has no user-management workflow that changes this status.
+
 ### 2.2 sessions
 
 ```text
@@ -119,6 +121,8 @@ status IN ('active', 'reserved', 'sold', 'archived')
 moderation_status IN ('visible', 'removed')
 ```
 
+`moderation_status` is present as an internal visibility safeguard, but v1 has no report, operator, or administration workflow that changes it.
+
 Add a unique constraint on `(id, seller_id)`. Conversations use a composite foreign key to this pair so the database, not only application code, enforces that the conversation seller owns the listing.
 
 Recommended indexes:
@@ -192,7 +196,9 @@ Indexes:
 (sender_id, created_at DESC)
 ```
 
-### 2.7 reports
+### 2.7 Deferred post-v1 reports
+
+Do not add this table or a report API before the first release. The shape below is a future design starting point, not a v1 requirement.
 
 ```text
 reports
@@ -227,7 +233,9 @@ status IN ('open', 'reviewed', 'dismissed', 'actioned')
 
 A polymorphic `target_id` cannot use one ordinary foreign key. Application-level validation is acceptable for this small trust table.
 
-### 2.8 moderation_actions
+### 2.8 Deferred post-v1 moderation actions
+
+Do not add this table or an operator workflow before the first release. If it is introduced later, action and audit-row creation must share one transaction.
 
 ```text
 moderation_actions
@@ -257,7 +265,7 @@ action IN (
 )
 ```
 
-The operator CLI changes the target state and inserts its audit row in one transaction. Audit rows are immutable during normal operations.
+Audit rows are immutable during normal operations.
 
 ## 3. Read position semantics
 
@@ -311,6 +319,8 @@ Use `archived`.
 
 Use `disabled`.
 
+v1 has no operator action that changes this state.
+
 ### Messages
 
 Do not provide ordinary deletion in v1.
@@ -320,7 +330,7 @@ Do not provide ordinary deletion in v1.
 Reserved for:
 
 - legal/privacy requirements;
-- moderation;
+- post-v1 moderation;
 - operator maintenance.
 
 ## 7. Transaction boundaries

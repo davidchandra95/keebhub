@@ -16,6 +16,17 @@ type Category struct {
 	Active    bool   `json:"active"`
 }
 
+type Conversation struct {
+	ID                      int64              `json:"id"`
+	ListingID               int64              `json:"listing_id"`
+	SellerID                int64              `json:"seller_id"`
+	BuyerID                 int64              `json:"buyer_id"`
+	SellerLastReadMessageID *int64             `json:"seller_last_read_message_id"`
+	BuyerLastReadMessageID  *int64             `json:"buyer_last_read_message_id"`
+	CreatedAt               pgtype.Timestamptz `json:"created_at"`
+	LastMessageAt           pgtype.Timestamptz `json:"last_message_at"`
+}
+
 type Listing struct {
 	ID               int64              `json:"id"`
 	SellerID         int64              `json:"seller_id"`
@@ -30,6 +41,14 @@ type Listing struct {
 	Negotiable       bool               `json:"negotiable"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Message struct {
+	ID             int64              `json:"id"`
+	ConversationID int64              `json:"conversation_id"`
+	SenderID       int64              `json:"sender_id"`
+	Body           string             `json:"body"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 type Session struct {

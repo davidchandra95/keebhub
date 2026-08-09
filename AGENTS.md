@@ -13,7 +13,7 @@ KeebHub is a small C2C classifieds marketplace for mechanical-keyboard enthusias
 The core user loop is:
 
 1. A seller maintains structured inventory in KeebHub.
-2. The seller shares a generated WTS post to an existing community such as Discord.
+2. The seller shares a catalog or listing link in an existing community such as Discord.
 3. A buyer discovers a listing or seller catalog.
 4. The buyer contacts the seller through listing-scoped chat.
 5. Both parties arrange payment, shipping, or COD outside KeebHub.
@@ -40,8 +40,11 @@ The repository currently contains:
 - database-backed hashed sessions, session middleware, logout, and `GET /api/v1/me`;
 - liveness and database readiness endpoints;
 - a minimal React application with health, login, and not-found pages.
+- catalog and marketplace-discovery APIs for categories and listings;
+- seller profile and public seller-catalog APIs;
+- backend-only listing-scoped chat: persistent conversations, inboxes, messages, read pointers, and authenticated SSE notifications.
 
-The catalog API foundation covers categories, listing management, public listing detail, and marketplace discovery. Seller profiles and public seller catalogs are also implemented. The React client remains at its minimal login and health baseline. Discord catalog export, chat, SSE, reports, and moderation remain documented planned slices. The OpenAPI contract includes planned v1 endpoints, so a documented endpoint is not proof that its code exists.
+The catalog API foundation covers categories, listing management, public listing detail, marketplace discovery, seller profiles, and public seller catalogs. The React client remains at its minimal login and health baseline. Discord catalog export, chat frontend screens, and reconnect handling are documented but not yet implemented. Reporting, blocking, and operator moderation are deliberately deferred until after the first release. The OpenAPI contract includes planned v1 endpoints, so a documented endpoint is not proof that its code exists.
 
 When a vertical slice becomes complete, update this section, `README.md`, and the checklist in `docs/16-implementation-plan.md` as part of the same change.
 

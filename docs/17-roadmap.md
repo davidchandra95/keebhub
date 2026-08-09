@@ -12,10 +12,8 @@ Core:
 - public browse/search;
 - structured WTS listings;
 - seller catalog;
-- copy Discord WTS post;
 - listing-scoped chat;
 - SSE;
-- report listing/user;
 - Docker Compose.
 
 No photos.
@@ -31,8 +29,7 @@ Only after observing real use:
 - duplicate listing;
 - bulk status update;
 - category sections;
-- seller-defined catalog ordering;
-- saved Discord export presets.
+- seller-defined catalog ordering.
 
 ### Buyer convenience
 
@@ -43,7 +40,9 @@ Only after observing real use:
 
 ### Trust
 
+- report listing/user;
 - block user;
+- operator account and listing actions;
 - seller account age on platform;
 - moderation UI.
 

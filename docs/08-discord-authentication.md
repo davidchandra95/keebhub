@@ -34,7 +34,7 @@ v1 does not:
 - manage roles;
 - read marketplace channels.
 
-The user manually copies the generated WTS text and pastes it into Discord.
+Discord is used only for identity. KeebHub does not read from or post to Discord communities.
 
 ## 4. OAuth flow
 
@@ -112,6 +112,8 @@ Lookup:
 3. verify not expired;
 4. load user;
 5. reject disabled user for authenticated mutations.
+
+v1 has no report-review or operator user-management flow that changes this state.
 
 ## 7. Cookie settings
 

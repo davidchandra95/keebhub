@@ -30,9 +30,7 @@ Authentication is required to:
 - contact a seller;
 - view inbox;
 - send messages;
-- mark conversations read;
-- report listings or users;
-- generate seller-specific catalog exports.
+- mark conversations read.
 
 ### AUTH-004 Logout
 
@@ -172,7 +170,7 @@ Normal search results include:
 
 Sold and archived listings are excluded from normal discovery by default.
 
-A sold listing remains accessible by direct URL unless removed for moderation.
+A sold listing remains accessible by direct URL.
 
 ### LIST-009 Seller catalog
 
@@ -321,68 +319,8 @@ The client reconnects automatically.
 
 After reconnect, it must reconcile messages from persistent storage rather than assuming the event stream is lossless.
 
-## 7. Discord catalog export
+## 7. Deferred post-v1 trust and moderation
 
-### EXPORT-001 Generate post
+v1 has no report submission, user blocking, moderation review, or operator administration workflow. These features must not block the first release.
 
-A seller can generate a Discord-friendly text representation of their current catalog.
-
-### EXPORT-002 Default contents
-
-Include:
-
-- seller header;
-- active listings;
-- reserved listings, clearly marked;
-- price;
-- negotiable marker when useful;
-- seller catalog URL.
-
-Exclude:
-
-- sold listings;
-- archived listings.
-
-### EXPORT-003 Copy
-
-Frontend exposes a one-click copy-to-clipboard action.
-
-The platform does not automatically post into Discord in v1.
-
-No bot is required.
-
-## 8. Reports
-
-### REPORT-001 Report target
-
-Authenticated users can report:
-
-- listing;
-- user.
-
-### REPORT-002 Reason
-
-Initial reasons:
-
-- scam suspicion;
-- prohibited or unrelated item;
-- harassment;
-- spam;
-- misleading listing;
-- other.
-
-### REPORT-003 Report storage
-
-Reports are stored for operator review.
-
-No complex moderation dashboard is required initially. A database/admin query workflow is acceptable for the first operational release.
-
-## 9. Admin minimum
-
-The application needs an operational mechanism to:
-
-- remove or restore listings through the separate moderation state;
-- disable a user from authenticated actions;
-- list and review reports.
-
-Implement this as a local audited operator CLI. Every mutation requires a non-empty operator identity and reason and records the state change in the same database transaction. A full admin UI and admin HTTP API are not required for v1.
+A later trust vertical slice can define listing and user reports, operator account actions, listing removal and restoration, and durable audit records from real launch needs. It must introduce its API, authorization, storage, and operational workflow together rather than treating an internal database field as a complete moderation feature.

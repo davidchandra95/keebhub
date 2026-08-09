@@ -117,23 +117,6 @@ A buyer can find a listing without Discord login.
 
 Seller can share one stable catalog URL.
 
-## Phase 5 - Discord catalog export
-
-### Deliverables
-
-- catalog formatter;
-- export API;
-- owner UI;
-- copy-to-clipboard;
-- active/reserved filtering;
-- catalog link appended.
-
-### Gate
-
-Seller can update inventory once and create a ready-to-paste WTS post.
-
-This phase is considered a core product milestone, not a cosmetic extra.
-
 ## Phase 6 - Conversations and persistent messages
 
 ### Deliverables
@@ -168,15 +151,10 @@ Build persistent correctness before SSE.
 
 Two browsers exchange messages without manual refresh, and a server restart does not lose committed messages.
 
-## Phase 8 - Reports and security hardening
+## Phase 8 - V1 security hardening
 
 ### Deliverables
 
-- reports;
-- disabled user enforcement;
-- local audited operator CLI;
-- separate listing moderation state;
-- immutable moderation action records;
 - input limits;
 - rate limits;
 - origin/CSRF checks;
@@ -186,6 +164,18 @@ Two browsers exchange messages without manual refresh, and a server restart does
 ### Gate
 
 Public launch threat checklist passes.
+
+## Post-v1 - Trust and moderation operations (deferred)
+
+Do not let this work delay the first release. Add it only after the catalog and buyer-seller chat loop has real users and a concrete operating need.
+
+Possible deliverables:
+
+- listing and user report intake;
+- user blocking;
+- operator account disable/enable workflow;
+- listing removal/restoration workflow;
+- immutable moderation audit records.
 
 ## Phase 9 - Production readiness
 
@@ -207,14 +197,14 @@ A fresh server can be provisioned using documented steps.
 
 ### Foundation
 
-- [ ] Initialize Go server
-- [ ] Initialize Vite/React/Astryx
-- [ ] Add Compose PostgreSQL
-- [ ] Add migration tool
-- [ ] Add sqlc
-- [ ] Add zap
-- [ ] Add health endpoints
-- [ ] Build single app image
+- [x] Initialize Go server
+- [x] Initialize Vite/React/Astryx
+- [x] Add Compose PostgreSQL
+- [x] Add migration tool
+- [x] Add sqlc
+- [x] Add zap
+- [x] Add health endpoints
+- [x] Build single app image
 
 ### Auth
 
@@ -240,33 +230,32 @@ A fresh server can be provisioned using documented steps.
 - [x] Seller profile
 - [x] Seller catalog
 
-### Export
-
-- [ ] Define Discord export format
-- [ ] Build formatter
-- [ ] Add export endpoint
-- [ ] Add copy UI
-
 ### Chat
 
-- [ ] Add conversations
-- [ ] Start/get conversation
-- [ ] Add messages
-- [ ] Send message
-- [ ] Message history
-- [ ] Inbox
-- [ ] Read pointer
-- [ ] SSE broker
-- [ ] SSE endpoint
+- [x] Add conversations
+- [x] Start/get conversation
+- [x] Add messages
+- [x] Send message
+- [x] Message history
+- [x] Inbox
+- [x] Read pointer
+- [x] SSE broker
+- [x] SSE endpoint
 - [ ] Frontend EventSource
 - [ ] Reconnect reconciliation
 
-### Trust
+### V1 security hardening
 
-- [ ] Add reports
-- [ ] Add disabled users
 - [ ] Add limits/rate limits
 - [ ] Security review
+
+### Post-v1 trust and moderation
+
+- [ ] Add reports
+- [ ] Add user blocking
+- [ ] Add operator account workflow
+- [ ] Add listing moderation workflow
+- [ ] Add immutable audit records
 
 ### Operations
 

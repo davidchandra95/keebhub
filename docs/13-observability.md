@@ -141,8 +141,6 @@ If OpenTelemetry is already operationally available, it can be added, but it sho
 
 ## 10. Audit needs
 
-Moderation actions should eventually have audit records.
-
-v1 can begin with operator logs if admin tooling is minimal.
+Post-v1 moderation actions should have durable audit records. v1 does not have an operator moderation workflow, so ordinary application logs are not a substitute for that future audit trail.
 
 Do not confuse application observability logs with a durable security audit log.

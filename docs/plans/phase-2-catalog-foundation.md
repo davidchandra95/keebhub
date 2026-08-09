@@ -281,4 +281,4 @@ API acceptance gate:
 6. Without a session cookie, find it through `GET /api/v1/listings` using text, category, condition, and price filters.
 7. Confirm `newest`, `price_asc`, and `price_desc` return stable orders across cursor pages without duplicates or missing rows.
 
-Seller catalogs, Discord export, chat, reports, moderation operations, images, and all frontend work remain outside Phase 2.
+Seller catalogs, chat, images, and all frontend work remain outside Phase 2. Reports, blocking, and moderation operations are deferred until after v1.

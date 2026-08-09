@@ -27,8 +27,7 @@
 ```text
 cmd/
 ├── server/
-├── migrate/
-└── admin/                 # trust phase, not foundation
+└── migrate/
 
 internal/
 ├── domain/                # entities and domain rules by vertical slice
@@ -91,8 +90,6 @@ MarkConversationRead
 
 LoginWithDiscord
 Logout
-
-CreateReport
 ```
 
 Application layer uses repository interfaces.
@@ -292,26 +289,12 @@ Minimum application-level limits should cover:
 
 - OAuth/login starts;
 - listing creation;
-- chat sends;
-- reports.
+- chat sends.
 
 A simple in-memory limiter is acceptable for one-process v1.
 
 Do not design a distributed rate-limit service before multiple replicas exist.
 
-## 16. Operator CLI
+## 16. Deferred post-v1 trust operations
 
-The trust phase adds `cmd/admin`, not a public admin HTTP API.
-
-Commands cover:
-
-```text
-reports list
-reports review
-listings remove
-listings restore
-users disable
-users enable
-```
-
-Every mutation requires `--actor` and `--reason`. The target change and immutable `moderation_actions` insert share one transaction.
+Do not add a public report API, user blocking, or operator administration tool before the first release. If launch experience requires these features, define the operator workflow and audit policy in a dedicated trust vertical slice. A local audited CLI remains a possible approach, but it is not a v1 commitment.

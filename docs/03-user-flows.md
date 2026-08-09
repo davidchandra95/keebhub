@@ -3,7 +3,7 @@
 ## 1. Anonymous buyer discovery
 
 ```text
-Discord WTS post
+Shared catalog or listing link
     |
     v
 Seller catalog or listing URL
@@ -122,30 +122,7 @@ Reactivate
 
 State changes must be explicit. Do not infer "sold" from chat messages.
 
-## 5. Discord distribution flow
-
-```text
-Seller maintains listings
-    |
-    v
-Seller opens "Share Catalog"
-    |
-    v
-Backend/frontend generates current WTS text
-    |
-    v
-Copy to clipboard
-    |
-    v
-Seller pastes into #marketplace-sell
-    |
-    v
-Buyer opens catalog link
-```
-
-The seller should never need to manually rewrite all product lines merely to repost their inventory.
-
-## 6. Buyer contacts seller
+## 5. Buyer contacts seller
 
 ```text
 Listing Detail
@@ -170,7 +147,7 @@ Backend behavior:
 4. Get or create unique conversation.
 5. Return conversation ID.
 
-## 7. Chat send flow
+## 6. Chat send flow
 
 ```text
 Buyer UI
@@ -198,7 +175,7 @@ Important rule:
 
 The message exists even if SSE delivery fails.
 
-## 8. Chat reconnect flow
+## 7. Chat reconnect flow
 
 ```text
 Browser loses connection
@@ -215,7 +192,7 @@ Local view is reconciled
 
 SSE is an update signal, not the authoritative message store.
 
-## 9. Reserve and sale flow
+## 8. Reserve and sale flow
 
 ```text
 ACTIVE
@@ -231,7 +208,9 @@ RESERVED
 
 No payment state is modeled.
 
-## 10. Report flow
+## 9. Post-v1 report flow (deferred)
+
+This flow is intentionally outside the v1 release and must not block shipping the catalog and buyer-seller chat loop.
 
 ```text
 Listing or seller

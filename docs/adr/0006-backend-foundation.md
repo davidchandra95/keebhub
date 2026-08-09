@@ -42,7 +42,7 @@ Product schema and queries are introduced with their vertical slices instead of 
 
 ## Operator boundary
 
-The future moderation tool is a local audited CLI in the application image. It is not a public HTTP API and is implemented only with the trust vertical slice.
+Reporting and operator moderation are post-v1 work. If they are later approved, a local audited CLI in the application image is one possible approach; no public admin HTTP API is planned by default.
 
 ## Revisit when
 

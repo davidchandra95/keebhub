@@ -77,8 +77,6 @@ v1 assumptions:
 4. Allow sellers to create, edit, reserve, sell, and archive listings.
 5. Allow buyers to initiate listing-scoped conversations with sellers.
 6. Deliver new chat messages using SSE.
-7. Allow sellers to generate a Discord-friendly WTS catalog post.
-8. Provide basic reporting and blocking of obviously abusive content through moderation controls.
 
 ## 7. Explicit non-goals
 
@@ -96,6 +94,10 @@ The following are intentionally excluded from v1:
 - ratings;
 - transaction reviews;
 - dispute resolution;
+- report submission and review;
+- user blocking;
+- listing or user moderation workflows;
+- operator administration tools;
 - listing photos;
 - chat attachments;
 - voice or video;
@@ -124,8 +126,7 @@ It stores:
 - listings;
 - seller catalog data;
 - conversations;
-- messages;
-- reports.
+- messages.
 
 It does not know or guarantee:
 
@@ -183,13 +184,12 @@ The initial release is successful if real users can complete this loop without o
 1. Login through Discord.
 2. Create several listings.
 3. Open a public seller catalog.
-4. Copy a generated WTS post.
-5. Paste that post into Discord.
-6. Another user follows the link.
-7. Buyer searches or opens a listing.
-8. Buyer contacts seller.
-9. Both users exchange messages.
-10. Seller marks the item reserved or sold.
+4. Share a seller catalog or listing link.
+5. Another user follows the link.
+6. Buyer searches or opens a listing.
+7. Buyer contacts seller.
+8. Both users exchange messages.
+9. Seller marks the item reserved or sold.
 
 Do not use GMV or platform revenue as a v1 success criterion because transactions occur off-platform.
 
@@ -207,7 +207,6 @@ Useful metrics:
 - contact-seller conversions;
 - conversations created;
 - messages sent;
-- Discord catalog export usage;
 - weekly returning sellers.
 
 Avoid vanity metrics that do not connect to the core loop.

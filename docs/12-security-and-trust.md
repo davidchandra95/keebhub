@@ -38,6 +38,8 @@ Likely threats:
 - logout invalidates server-side session;
 - disabled local accounts cannot create content or send chat.
 
+The v1 service enforces the existing disabled state but provides no reporting or operator workflow that sets it.
+
 ## 3. Session storage
 
 Use opaque random tokens.
@@ -71,7 +73,6 @@ Suggested initial limits:
 | Location | 100 chars |
 | Bio | 500 chars |
 | Chat message | 2,000 chars |
-| Report details | 2,000 chars |
 
 Reject unreasonable request body sizes at HTTP layer.
 
@@ -142,43 +143,13 @@ The platform cannot reliably prove:
 
 A rating system without a transaction truth source is easy to manipulate.
 
-## 12. Reports
+## 12. Deferred post-v1 trust and moderation
 
-Provide report action for:
+v1 does not include report submission, user blocking, moderation review, or an operator administration tool. These are product workflows, not prerequisites for shipping the catalog and buyer-seller chat loop.
 
-- listing;
-- seller/user.
+If a later trust slice is approved, it must define report targets and reasons, rate limits, operator authorization, listing and account actions, private-message access policy, and immutable audit records together. The marketplace remains limited to mechanical-keyboard-related goods, but no in-product v1 workflow handles prohibited-content reports.
 
-Rate-limit reports.
-
-Store reporter and target.
-
-Operators need enough context to investigate without exposing private messages publicly.
-
-## 13. Chat abuse
-
-v1 should at least permit operational intervention.
-
-Recommended future-small feature if harassment appears:
-
-- block user.
-
-Not required for first release if moderation volume is tiny, but the data model and authorization design should not prevent adding it.
-
-## 14. Prohibited content boundary
-
-The marketplace is for mechanical-keyboard-related goods.
-
-Operators should remove:
-
-- illegal goods;
-- clearly unrelated commercial spam;
-- impersonation/scam content;
-- malicious/phishing content.
-
-The `other` category is not permission to become a generic classifieds marketplace.
-
-## 15. Secrets
+## 13. Secrets
 
 Never commit:
 
@@ -189,7 +160,7 @@ Never commit:
 
 Use environment variables or deployment secret mechanisms.
 
-## 16. Logs
+## 14. Logs
 
 Never log:
 
@@ -201,13 +172,12 @@ Never log:
 
 Avoid logging message bodies unless temporarily required for a specific investigation with proper access controls.
 
-## 17. Backups
+## 15. Backups
 
 Database backups contain:
 
 - identities;
 - private chats;
-- reports.
 
 Treat backups as sensitive.
 

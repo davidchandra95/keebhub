@@ -57,11 +57,12 @@ Once the message API reports a successful committed creation, the message must b
 
 ## 7. Privacy
 
-Private conversations must only be readable by:
+Private conversations may be read through v1 application endpoints only by:
 
 - buyer;
-- seller;
-- authorized operators when necessary for abuse/security operations and governed by operator policy.
+- seller.
+
+Any future operator access for abuse or security work requires a separately approved policy and authorization model.
 
 Do not expose chat through public endpoints.
 

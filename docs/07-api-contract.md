@@ -257,7 +257,7 @@ Sold listings remain accessible.
 
 Archived listings are returned only to the listing owner. Other callers receive `404 Not Found`.
 
-Listings removed by moderation are unavailable through normal application endpoints, including to the owner.
+The current visibility safeguard treats a listing marked `removed` as unavailable through normal application endpoints, including to the owner. v1 provides no report or operator API that sets this state.
 
 ### POST `/api/v1/listings`
 
@@ -350,31 +350,15 @@ Supports all statuses.
 
 Optional `status` filters one seller-controlled status. Results use stable `(updated_at, id)` descending cursor pagination. Removed listings are excluded.
 
-## 10. Discord catalog export
-
-### GET `/api/v1/me/catalog-export?format=discord`
-
-Authenticated.
-
-Response:
-
-```json
-{
-  "format": "discord",
-  "text": "WTS Mechanical Keyboard Stuff\n\nNeo 98 - Rp3.000.000\n...",
-  "catalog_url": "https://example.com/u/gunawan"
-}
-```
-
-Do not make the server post to Discord.
-
-## 11. Conversations
+## 10. Conversations
 
 ### POST `/api/v1/listings/{listing_id}/conversation`
 
 Authenticated buyer.
 
-Creates or returns an existing conversation.
+Creates or returns an existing conversation. New conversations require a visible listing whose status is `active` or `reserved`; sellers cannot start a conversation with themselves. Existing conversations remain available after a listing is sold, archived, or later removed by a moderation operation.
+
+Returns `201 Created` for a new row and `200 OK` for the existing row.
 
 Response:
 
@@ -421,6 +405,7 @@ Response:
       },
       "last_message": {
         "id": "5004",
+        "sender_id": "77",
         "body": "Boleh COD Jakarta Barat?",
         "created_at": "2026-08-08T12:10:00Z"
       },
@@ -430,7 +415,9 @@ Response:
 }
 ```
 
-## 12. Messages
+Inbox order is `COALESCE(last_message_at, created_at) DESC, id DESC`. `cursor` is an opaque, versioned value, while `limit` defaults to 20 and is at most 100.
+
+## 11. Messages
 
 ### GET `/api/v1/conversations/{conversation_id}/messages`
 
@@ -448,6 +435,8 @@ Use:
 
 - `before_id` for scrolling older history;
 - `after_id` for reconnect/catch-up.
+
+The parameters cannot be combined. Without either parameter, the endpoint returns the latest page. Every response is ordered by ascending message ID, including latest and older-history pages.
 
 Response:
 
@@ -468,6 +457,8 @@ Response:
 
 Authenticated participant only.
 
+The server trims outer whitespace before validating and storing a body. Internal spaces and line breaks are preserved. A disabled account cannot start a conversation or send a message.
+
 ```json
 {
   "body": "Boleh COD Jakarta Barat?"
@@ -484,9 +475,9 @@ Response: `201 Created`.
 }
 ```
 
-The backend validates that the message belongs to the conversation.
+The backend validates that the message belongs to the conversation and only advances the authenticated participant's pointer. Repeating the same pointer or supplying an older pointer returns `204 No Content` without moving it backward.
 
-## 13. SSE
+## 12. SSE
 
 ### GET `/api/v1/events`
 
@@ -508,30 +499,15 @@ data: {"conversation_id":"9001","message_id":"5004"}
 
 Payload stays intentionally small.
 
+The handler immediately flushes `text/event-stream` headers, sends `: keepalive` every 20 seconds while idle, and flushes each event. Event delivery is best effort: a dropped or disconnected stream is recovered through normal message catch-up reads.
+
 On receipt, frontend can:
 
 - append if it already has sufficient context;
 - or fetch the message/conversation;
 - update inbox unread state.
 
-## 14. Reports
-
-### POST `/api/v1/reports`
-
-Authenticated.
-
-```json
-{
-  "target_type": "listing",
-  "target_id": "1001",
-  "reason": "misleading_listing",
-  "details": "Price/description appears intentionally misleading."
-}
-```
-
-Response: `201 Created`.
-
-## 15. HTTP status guidance
+## 13. HTTP status guidance
 
 | Status | Meaning |
 |---|---|
@@ -547,7 +523,7 @@ Response: `201 Created`.
 | 429 | Rate limited |
 | 500 | Unexpected server error |
 
-## 16. Idempotency
+## 14. Idempotency
 
 No generalized idempotency-key infrastructure is necessary for v1.
 

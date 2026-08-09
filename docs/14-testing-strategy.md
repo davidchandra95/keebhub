@@ -131,8 +131,7 @@ Use component and route tests for:
 - login redirect;
 - inbox unread state;
 - chat merge/deduplication;
-- sold/reserved badge;
-- catalog export copy flow.
+- sold/reserved badge.
 
 ## 9. End-to-end tests
 
@@ -169,16 +168,6 @@ buyer + seller sessions
 -> seller reloads
 -> message remains
 -> seller responds
-```
-
-### Scenario D - Discord export
-
-```text
-seller has active/reserved/sold listings
--> generate post
--> output includes active/reserved
--> output excludes sold
--> catalog URL included
 ```
 
 ## 10. Migration tests
@@ -233,7 +222,6 @@ Before production release:
 - public browsing works logged out;
 - create/edit listing works;
 - seller catalog share URL works;
-- catalog export copies correctly;
 - two-account chat tested;
 - SSE reconnect tested;
 - database backup verified.

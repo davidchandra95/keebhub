@@ -16,6 +16,7 @@ import (
 type Runner struct {
 	HTTPServer      *http.Server
 	Logger          *zap.Logger
+	PreShutdown     func()
 	ShutdownTimeout time.Duration
 }
 
@@ -39,6 +40,9 @@ func (r Runner) Run(ctx context.Context, listener net.Listener) error {
 		return fmt.Errorf("serve HTTP: %w", err)
 	case <-ctx.Done():
 		logger.Info("shutting down HTTP server")
+		if r.PreShutdown != nil {
+			r.PreShutdown()
+		}
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), r.ShutdownTimeout)

@@ -20,11 +20,9 @@ tags:
   - name: Profile
     description: Current-user and public seller profiles.
   - name: Catalog
-    description: Categories, listings, and seller catalog export.
+    description: Categories, listings, and seller catalogs.
   - name: Chat
     description: Listing conversations, messages, and user event delivery.
-  - name: Trust
-    description: User-submitted reports for later operator review.
 
 # Public access is the default. Authenticated operations override this value.
 security: []
@@ -436,37 +434,11 @@ paths:
                 $ref: "#/components/schemas/ListingPage"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /api/v1/me/catalog-export:
-    get:
-      x-implementation-status: planned
-      tags: [Catalog]
-      operationId: exportCatalog
-      summary: Generate a Discord catalog post
-      security:
-        - sessionCookie: []
-      parameters:
-        - name: format
-          in: query
-          required: true
-          schema:
-            type: string
-            const: discord
-      responses:
-        "200":
-          description: Deterministic text export.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CatalogExport"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
   /api/v1/listings/{listing_id}/conversation:
     parameters:
       - $ref: "#/components/parameters/ListingID"
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Chat]
       operationId: startConversation
       summary: Create or return the buyer's listing conversation
@@ -493,7 +465,7 @@ paths:
           $ref: "#/components/responses/Conflict"
   /api/v1/conversations:
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Chat]
       operationId: listConversations
       summary: List the current user's inbox
@@ -517,13 +489,15 @@ paths:
                       $ref: "#/components/schemas/ConversationSummary"
                   next_cursor:
                     $ref: "#/components/schemas/NullableCursor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
   /api/v1/conversations/{conversation_id}/messages:
     parameters:
       - $ref: "#/components/parameters/ConversationID"
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Chat]
       operationId: listMessages
       summary: Read or catch up conversation messages
@@ -561,7 +535,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Chat]
       operationId: sendMessage
       summary: Persist a conversation message
@@ -593,17 +567,23 @@ paths:
                     $ref: "#/components/schemas/Message"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
         "429":
           $ref: "#/components/responses/RateLimited"
   /api/v1/conversations/{conversation_id}/read:
     parameters:
       - $ref: "#/components/parameters/ConversationID"
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Chat]
       operationId: markConversationRead
       summary: Advance the current user's read pointer
@@ -625,13 +605,19 @@ paths:
           description: Read pointer advanced or already ahead.
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
   /api/v1/events:
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Chat]
       operationId: streamEvents
       summary: Stream best-effort user events
@@ -646,40 +632,8 @@ paths:
                 type: string
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /api/v1/reports:
-    post:
-      x-implementation-status: planned
-      tags: [Trust]
-      operationId: createReport
-      summary: Report a listing or user
-      security:
-        - sessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateReportRequest"
-      responses:
-        "201":
-          description: Report stored for operator review.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id]
-                properties:
-                  id:
-                    $ref: "#/components/schemas/ID"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "422":
-          $ref: "#/components/responses/ValidationFailed"
-        "429":
-          $ref: "#/components/responses/RateLimited"
-
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
   securitySchemes:
     sessionCookie:
@@ -1115,19 +1069,6 @@ components:
           $ref: "#/components/schemas/ListingCondition"
         negotiable:
           type: boolean
-    CatalogExport:
-      type: object
-      additionalProperties: false
-      required: [format, text, catalog_url]
-      properties:
-        format:
-          type: string
-          const: discord
-        text:
-          type: string
-        catalog_url:
-          type: string
-          format: uri
     ConversationCreated:
       type: object
       additionalProperties: false
@@ -1184,26 +1125,3 @@ components:
           maxLength: 2000
         created_at:
           $ref: "#/components/schemas/Timestamp"
-    CreateReportRequest:
-      type: object
-      additionalProperties: false
-      required: [target_type, target_id, reason]
-      properties:
-        target_type:
-          type: string
-          enum: [listing, user]
-        target_id:
-          $ref: "#/components/schemas/ID"
-        reason:
-          type: string
-          enum:
-            - scam_suspicion
-            - unrelated_item
-            - harassment
-            - spam
-            - misleading_listing
-            - other
-        details:
-          type: string
-          maxLength: 2000
-          default: ""

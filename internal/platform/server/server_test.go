@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davidchandra95/keebhub/internal/adapter/sse"
+	"github.com/davidchandra95/keebhub/internal/domain"
 	platformserver "github.com/davidchandra95/keebhub/internal/platform/server"
 	"go.uber.org/zap"
 )
@@ -89,6 +91,64 @@ func TestRunnerReturnsUnexpectedServeError(t *testing.T) {
 	if !errors.Is(err, listener.err) {
 		t.Fatalf("Run() error = %v, want %v", err, listener.err)
 	}
+}
+
+func TestRunnerPreShutdownReleasesSSEStream(t *testing.T) {
+	t.Parallel()
+
+	broker := sse.NewBroker(zap.NewNop())
+	streamStarted := make(chan struct{})
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	httpServer := &http.Server{Handler: http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		subscription, err := broker.Subscribe(1)
+		if err != nil {
+			http.Error(response, "unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		defer subscription.Unsubscribe()
+		response.Header().Set("Content-Type", "text/event-stream")
+		response.WriteHeader(http.StatusOK)
+		response.(http.Flusher).Flush()
+		close(streamStarted)
+		for range subscription.Events {
+		}
+	})}
+	runner := platformserver.Runner{
+		HTTPServer: httpServer, Logger: zap.NewNop(), PreShutdown: broker.Close, ShutdownTimeout: time.Second,
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- runner.Run(ctx, listener) }()
+
+	response, err := http.Get("http://" + listener.Addr().String())
+	if err != nil {
+		t.Fatalf("open stream: %v", err)
+	}
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Errorf("close stream response: %v", err)
+		}
+	}()
+	select {
+	case <-streamStarted:
+	case <-time.After(time.Second):
+		t.Fatal("stream did not start")
+	}
+	cancel()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("Run() error = %v", err)
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("Run() waited for the SSE stream instead of closing it")
+	}
+
+	broker.PublishMessageCreated(domain.MessageCreatedEvent{ConversationID: 1, MessageID: 1, SellerID: 1, BuyerID: 2})
 }
 
 type failingListener struct {

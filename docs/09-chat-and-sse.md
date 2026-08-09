@@ -48,13 +48,15 @@ Algorithm:
 ```text
 1. Require authenticated user.
 2. Load listing.
-3. Reject if listing is sold or archived.
+3. Require a visible listing in `active` or `reserved` status.
 4. Reject if current user is seller.
 5. INSERT conversation with ON CONFLICT against unique tuple.
 6. Return resulting conversation.
 ```
 
 This makes the operation safe under concurrent button presses.
+
+Once created, a conversation remains available when a listing later becomes sold, archived, or is removed by a future moderation operation. Listing-state changes do not delete its history.
 
 ## 4. Sending a message
 
@@ -83,6 +85,8 @@ publish message.created to in-memory SSE broker
 ```
 
 Never publish before commit.
+
+Message bodies are outer-trimmed before validation and storage. They are limited to 2,000 Unicode characters, while internal spaces and line breaks are preserved.
 
 ## 5. Event design
 
@@ -149,6 +153,8 @@ Suggested interval:
 
 Exact value can be operationally tuned.
 
+The current server uses a 20-second interval, immediately flushes the event-stream headers, and sets `Cache-Control: no-cache` plus `X-Accel-Buffering: no`.
+
 ## 9. Reconnect correctness
 
 SSE may disconnect.
@@ -213,6 +219,8 @@ Use:
 - non-blocking publish or short timeout;
 - disconnect/reconcile rather than unbounded memory growth.
 
+The server uses a channel capacity of 16. A full channel is closed and removed so that the browser reconnects and reconciles durable PostgreSQL state. Broker shutdown closes every subscription before normal HTTP shutdown, so long-lived streams do not hold shutdown open.
+
 ## 12. Message pagination
 
 ### Older messages
@@ -228,6 +236,8 @@ GET /api/v1/conversations/{conversation_id}/messages?after_id=5000&limit=100
 ```
 
 IDs are monotonic.
+
+`before_id` and `after_id` cannot be combined. Latest and older-page database reads use descending ID order for efficient limits, then the server returns the items in ascending ID order. Catch-up pages are read and returned in ascending ID order.
 
 ## 13. Read pointer
 

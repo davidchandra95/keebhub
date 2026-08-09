@@ -98,8 +98,7 @@ Header:
 - handle;
 - location;
 - bio;
-- active listing count;
-- "Copy Discord Post" if owner.
+- active listing count.
 
 Sections:
 

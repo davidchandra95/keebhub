@@ -110,19 +110,19 @@ The domain and application layers must not depend on Echo, sqlc-generated concre
 │   │   └── main.go
 │   ├── migrate/
 │   │   └── main.go
-│   └── admin/                 # added with the trust vertical slice
+│   └── admin/                 # post-v1 only, if needed
 ├── internal/
 │   ├── domain/
 │   │   ├── user.go
 │   │   ├── listing.go
 │   │   ├── conversation.go
 │   │   ├── message.go
-│   │   └── report.go
+│   │   └── report.go           # post-v1 only
 │   ├── app/
 │   │   ├── auth/
 │   │   ├── catalog/
 │   │   ├── chat/
-│   │   └── trust/
+│   │   └── trust/              # post-v1 only
 │   ├── adapter/
 │   │   ├── http/
 │   │   ├── postgres/
@@ -171,8 +171,7 @@ Responsibilities:
 - listings;
 - seller catalogs;
 - listing search;
-- listing status transitions;
-- Discord catalog export.
+- listing status transitions.
 
 ### Chat
 
@@ -185,13 +184,9 @@ Responsibilities:
 - inbox queries;
 - SSE publication.
 
-### Trust
+### Deferred post-v1 trust
 
-Responsibilities:
-
-- reports;
-- disabled-account enforcement;
-- moderation state.
+Report submission, blocking, moderation review, and operator administration are post-v1 work. The v1 service retains its existing fail-closed checks for disabled users and removed listings, but it does not expose a workflow that changes either state.
 
 ## 6. PostgreSQL as source of truth
 

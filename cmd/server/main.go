@@ -15,6 +15,7 @@ import (
 	"github.com/davidchandra95/keebhub/internal/adapter/discord"
 	"github.com/davidchandra95/keebhub/internal/adapter/httpapi"
 	postgresadapter "github.com/davidchandra95/keebhub/internal/adapter/postgres"
+	"github.com/davidchandra95/keebhub/internal/adapter/sse"
 	"github.com/davidchandra95/keebhub/internal/app"
 	"github.com/davidchandra95/keebhub/internal/platform/config"
 	"github.com/davidchandra95/keebhub/internal/platform/database"
@@ -70,6 +71,8 @@ func run() (returnErr error) {
 	catalog := app.NewCatalogService(catalogStore, catalogStore, time.Now)
 	sellerStore := postgresadapter.NewSellerStore(pool)
 	seller := app.NewSellerService(sellerStore, sellerStore, time.Now)
+	broker := sse.NewBroker(logger)
+	chat := app.NewChatService(catalogStore, postgresadapter.NewChatStore(pool), broker, time.Now)
 
 	handler := httpapi.New(httpapi.Config{
 		AppBaseURL:        cfg.BaseURL,
@@ -77,6 +80,8 @@ func run() (returnErr error) {
 		BodyLimit:         cfg.HTTPBodyLimit,
 		Catalog:           catalog,
 		Seller:            seller,
+		Chat:              chat,
+		Events:            broker,
 		Logger:            logger,
 		Pinger:            pool,
 		ReadinessTimeout:  cfg.ReadinessTimeout,
@@ -104,6 +109,7 @@ func run() (returnErr error) {
 	runner := platformserver.Runner{
 		HTTPServer:      httpServer,
 		Logger:          logger,
+		PreShutdown:     broker.Close,
 		ShutdownTimeout: cfg.ShutdownTimeout,
 	}
 	return runner.Run(ctx, listener)

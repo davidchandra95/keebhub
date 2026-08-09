@@ -48,4 +48,4 @@ Relevant design facts:
 
 KeebHub deliberately uses Discord only for identity in v1.
 
-It does not require a Discord bot or guild/channel access for the catalog-export feature because sellers manually paste generated text into Discord.
+It does not use a Discord bot or request guild and channel access.
