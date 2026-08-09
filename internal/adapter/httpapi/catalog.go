@@ -1,15 +1,10 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
-	"mime"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/davidchandra95/keebhub/internal/app"
@@ -17,8 +12,6 @@ import (
 	"github.com/labstack/echo/v5"
 	"go.uber.org/zap"
 )
-
-const maximumListingRequestBytes = 32 << 10
 
 // CatalogService describes catalog use cases consumed by the HTTP adapter.
 type CatalogService interface {
@@ -381,21 +374,6 @@ func malformedQueryError(field, message string) error {
 	return &Error{Status: http.StatusBadRequest, Code: "bad_request", Message: "The request was malformed.", Fields: map[string]string{field: message}}
 }
 
-type jsonField[T any] struct {
-	present bool
-	null    bool
-	value   T
-}
-
-func (f *jsonField[T]) UnmarshalJSON(data []byte) error {
-	f.present = true
-	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
-		f.null = true
-		return nil
-	}
-	return json.Unmarshal(data, &f.value)
-}
-
 type createListingRequest struct {
 	Title        jsonField[string] `json:"title"`
 	Description  jsonField[string] `json:"description"`
@@ -494,85 +472,6 @@ func (r changeListingStatusRequest) status() (domain.ListingStatus, error) {
 	return domain.ListingStatus(r.Status.value), nil
 }
 
-type jsonFieldMarker interface {
-	isPresent() bool
-	isNull() bool
-}
-
-func (f jsonField[T]) isPresent() bool { return f.present }
-func (f jsonField[T]) isNull() bool    { return f.null }
-
-func requiredFieldErrors(fields map[string]jsonFieldMarker) map[string]string {
-	result := map[string]string{}
-	for name, field := range fields {
-		if !field.isPresent() {
-			result[name] = "is required"
-		}
-	}
-	return result
-}
-
-func appendNullFieldErrors(result map[string]string, fields map[string]jsonFieldMarker) {
-	for name, field := range fields {
-		if field.isNull() {
-			result[name] = "must not be null"
-		}
-	}
-}
-
-func hasPresentField(fields map[string]jsonFieldMarker) bool {
-	for _, field := range fields {
-		if field.isPresent() {
-			return true
-		}
-	}
-	return false
-}
-
-func fieldPointer[T any](value T) *T {
-	return &value
-}
-
 func decodeListingRequest(c *echo.Context, destination any) error {
-	mediaType, _, err := mime.ParseMediaType(c.Request().Header.Get(echo.HeaderContentType))
-	if err != nil || !strings.EqualFold(mediaType, echo.MIMEApplicationJSON) {
-		return echo.ErrUnsupportedMediaType
-	}
-	if c.Request().ContentLength > maximumListingRequestBytes {
-		return echo.ErrStatusRequestEntityTooLarge
-	}
-	c.Request().Body = http.MaxBytesReader(c.Response(), c.Request().Body, maximumListingRequestBytes)
-	decoder := json.NewDecoder(c.Request().Body)
-	var raw json.RawMessage
-	if err := decoder.Decode(&raw); err != nil {
-		return decodeListingRequestError(err)
-	}
-	if len(raw) == 0 || bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
-		return malformedListingBodyError()
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		if err == nil {
-			return malformedListingBodyError()
-		}
-		return decodeListingRequestError(err)
-	}
-	strict := json.NewDecoder(bytes.NewReader(raw))
-	strict.DisallowUnknownFields()
-	if err := strict.Decode(destination); err != nil {
-		return malformedListingBodyError()
-	}
-	return nil
-}
-
-func decodeListingRequestError(err error) error {
-	var tooLarge *http.MaxBytesError
-	if errors.As(err, &tooLarge) {
-		return echo.ErrStatusRequestEntityTooLarge
-	}
-	return malformedListingBodyError()
-}
-
-func malformedListingBodyError() error {
-	return &Error{Status: http.StatusBadRequest, Code: "bad_request", Message: "The request was malformed."}
+	return decodeJSONRequest(c, destination)
 }

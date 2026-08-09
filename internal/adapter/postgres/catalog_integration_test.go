@@ -106,7 +106,7 @@ func TestCatalogDatabaseConstraintsAndVisibility(t *testing.T) {
 		})
 	}
 	var uniqueCount int
-	if err := database.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE conname = 'listings_id_seller_id_key'`).Scan(&uniqueCount); err != nil || uniqueCount != 1 {
+	if err := database.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE conname = 'listings_id_seller_id_key' AND conrelid = 'listings'::regclass`).Scan(&uniqueCount); err != nil || uniqueCount != 1 {
 		t.Fatalf("composite unique constraint count = %d, error = %v", uniqueCount, err)
 	}
 	if _, err := database.Pool.Exec(ctx, `UPDATE listings SET status = 'archived' WHERE id = $1`, listing.ID); err != nil {

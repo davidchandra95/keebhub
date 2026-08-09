@@ -150,7 +150,8 @@ Response:
     "display_name": "Gunawan",
     "avatar_url": "https://...",
     "location": "Jakarta Barat",
-    "bio": "Keyboard enthusiast"
+    "bio": "Keyboard enthusiast",
+    "created_at": "2026-08-09T10:00:00Z"
   }
 }
 ```
@@ -164,7 +165,7 @@ Response:
 }
 ```
 
-This is a strict partial update. Omitting a field leaves it unchanged. `null` or an empty trimmed value clears optional `location` or `bio`.
+This is a strict partial update. Omitting a field leaves it unchanged. `null` or an empty trimmed value clears optional `location` or `bio`. Outer whitespace is trimmed, while internal spaces and bio line breaks are preserved. Location is limited to 100 Unicode characters and bio is limited to 500 Unicode characters. An empty object is rejected with `400 Bad Request`, unchanged normalized values return the current user without updating `updated_at`, and malformed, oversized, or non-JSON bodies return `400`, `413`, or `415`.
 
 ## 6. Categories
 
@@ -312,7 +313,9 @@ Recommended instead of permitting arbitrary status changes inside the generic ed
 
 ### GET `/api/v1/users/{handle}`
 
-Public profile.
+Public profile. Handles are canonical lowercase values and malformed or unknown handles return `404 Not Found`.
+
+The response contains the public seller identity, location, bio, account creation timestamp, and `active_listing_count`. The count includes only visible active listings. Sellers with no active listings, including disabled sellers, remain publicly readable and return a count of zero.
 
 ### GET `/api/v1/users/{handle}/listings`
 
@@ -332,6 +335,10 @@ Default:
 ```text
 active,reserved
 ```
+
+Active listings appear before reserved listings. Each status group is sorted by `updated_at DESC, id DESC`. Sold listings are returned only with `status=sold`; archived and moderation-removed listings never appear. Category is trimmed before exact-slug filtering, and an unknown category returns an empty page.
+
+Results use an opaque, versioned cursor bound to the seller, selected status, and normalized category. Changing any of those values between pages returns `400 Bad Request`; changing `limit` is allowed.
 
 ## 9. Seller management
 

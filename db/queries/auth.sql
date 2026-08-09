@@ -46,3 +46,29 @@ SELECT users.id,
        users.updated_at
 FROM users
 JOIN valid_session ON valid_session.user_id = users.id;
+
+-- name: UpdateUserProfile :one
+UPDATE users
+SET location = CASE WHEN sqlc.arg(set_location)::boolean THEN sqlc.narg(location)::text ELSE location END,
+    bio = CASE WHEN sqlc.arg(set_bio)::boolean THEN sqlc.narg(bio)::text ELSE bio END,
+    updated_at = sqlc.arg(updated_at)::timestamptz
+WHERE id = sqlc.arg(user_id)
+  AND status = 'active'
+RETURNING id, discord_id, discord_username, display_name, avatar_url, handle, location, bio, status, created_at, updated_at;
+
+-- name: GetSellerProfileByHandle :one
+SELECT users.id,
+       users.handle,
+       users.display_name,
+       users.avatar_url,
+       users.location,
+       users.bio,
+       users.created_at,
+       count(listings.id)::bigint AS active_listing_count
+FROM users
+LEFT JOIN listings
+  ON listings.seller_id = users.id
+ AND listings.status = 'active'
+ AND listings.moderation_status = 'visible'
+WHERE users.handle = $1
+GROUP BY users.id;

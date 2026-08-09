@@ -85,6 +85,51 @@ func (q *Queries) DeleteSessionByHash(ctx context.Context, tokenHash []byte) (in
 	return result.RowsAffected(), nil
 }
 
+const getSellerProfileByHandle = `-- name: GetSellerProfileByHandle :one
+SELECT users.id,
+       users.handle,
+       users.display_name,
+       users.avatar_url,
+       users.location,
+       users.bio,
+       users.created_at,
+       count(listings.id)::bigint AS active_listing_count
+FROM users
+LEFT JOIN listings
+  ON listings.seller_id = users.id
+ AND listings.status = 'active'
+ AND listings.moderation_status = 'visible'
+WHERE users.handle = $1
+GROUP BY users.id
+`
+
+type GetSellerProfileByHandleRow struct {
+	ID                 int64              `json:"id"`
+	Handle             string             `json:"handle"`
+	DisplayName        string             `json:"display_name"`
+	AvatarUrl          *string            `json:"avatar_url"`
+	Location           *string            `json:"location"`
+	Bio                *string            `json:"bio"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	ActiveListingCount int64              `json:"active_listing_count"`
+}
+
+func (q *Queries) GetSellerProfileByHandle(ctx context.Context, handle string) (GetSellerProfileByHandleRow, error) {
+	row := q.db.QueryRow(ctx, getSellerProfileByHandle, handle)
+	var i GetSellerProfileByHandleRow
+	err := row.Scan(
+		&i.ID,
+		&i.Handle,
+		&i.DisplayName,
+		&i.AvatarUrl,
+		&i.Location,
+		&i.Bio,
+		&i.CreatedAt,
+		&i.ActiveListingCount,
+	)
+	return i, err
+}
+
 const getUserByDiscordID = `-- name: GetUserByDiscordID :one
 SELECT id, discord_id, discord_username, display_name, avatar_url, handle, location, bio, status, created_at, updated_at
 FROM users
@@ -182,6 +227,51 @@ func (q *Queries) UpdateDiscordIdentity(ctx context.Context, arg UpdateDiscordId
 		arg.DisplayName,
 		arg.AvatarUrl,
 		arg.UpdatedAt,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.DiscordID,
+		&i.DiscordUsername,
+		&i.DisplayName,
+		&i.AvatarUrl,
+		&i.Handle,
+		&i.Location,
+		&i.Bio,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateUserProfile = `-- name: UpdateUserProfile :one
+UPDATE users
+SET location = CASE WHEN $1::boolean THEN $2::text ELSE location END,
+    bio = CASE WHEN $3::boolean THEN $4::text ELSE bio END,
+    updated_at = $5::timestamptz
+WHERE id = $6
+  AND status = 'active'
+RETURNING id, discord_id, discord_username, display_name, avatar_url, handle, location, bio, status, created_at, updated_at
+`
+
+type UpdateUserProfileParams struct {
+	SetLocation bool               `json:"set_location"`
+	Location    *string            `json:"location"`
+	SetBio      bool               `json:"set_bio"`
+	Bio         *string            `json:"bio"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	UserID      int64              `json:"user_id"`
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserProfile,
+		arg.SetLocation,
+		arg.Location,
+		arg.SetBio,
+		arg.Bio,
+		arg.UpdatedAt,
+		arg.UserID,
 	)
 	var i User
 	err := row.Scan(
