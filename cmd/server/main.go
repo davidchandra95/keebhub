@@ -31,6 +31,10 @@ func main() {
 }
 
 func run() (returnErr error) {
+	if err := loadDevelopmentEnv(); err != nil {
+		return err
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)

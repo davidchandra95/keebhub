@@ -218,7 +218,7 @@ A fresh server can be provisioned using documented steps.
 
 ### Auth
 
-- [ ] Create Discord OAuth app config
+- [x] Create Discord OAuth app config
 - [x] Implement OAuth state
 - [x] Implement callback
 - [x] Add users table
