@@ -111,7 +111,7 @@ The core loop is:
 
 ## Development status
 
-The repository currently contains the backend foundation, Discord authentication, database-backed sessions, and a minimal login page. Catalog, chat, trust, and moderation behavior remain planned vertical slices.
+The repository currently contains the backend foundation, Discord authentication, database-backed sessions, and the catalog API foundation: categories, listing management, public detail, and marketplace search. The React client remains at its minimal login/health baseline. Seller profiles, chat, trust, and moderation operations remain planned vertical slices.
 
 ## Local development
 

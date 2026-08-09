@@ -209,6 +209,12 @@ Default public states:
 active,reserved
 ```
 
+`q` and `category` are trimmed. An empty normalized value is treated as absent.
+`q` is a literal case-insensitive substring search, so `%`, `_`, and backslash do
+not act as PostgreSQL wildcard characters. An unknown category returns an empty
+successful page. Cursors are bound to every search filter and sort; changing
+`limit` between pages is allowed.
+
 Response:
 
 ```json
@@ -248,9 +254,9 @@ Public.
 
 Sold listings remain accessible.
 
-Archived listings are returned only to the listing owner or an authenticated participant in an existing conversation about that listing. Other callers receive `404 Not Found`.
+Archived listings are returned only to the listing owner. Other callers receive `404 Not Found`.
 
-Listings removed by moderation are unavailable through normal application endpoints, including to the owner and conversation participants.
+Listings removed by moderation are unavailable through normal application endpoints, including to the owner.
 
 ### POST `/api/v1/listings`
 
@@ -270,7 +276,9 @@ Authenticated.
 
 Response: `201 Created`.
 
-The category must exist and be active. Title, description, price, and quantity use the limits in the security and OpenAPI contracts.
+The category must exist and be active. Title, description, price, and quantity use the limits in the security and OpenAPI contracts. Omitted `description`, `quantity`, and `negotiable` use `""`, `1`, and `false` respectively.
+
+All listing writes require `application/json`, allow standard content-type parameters, and are limited to 32 KiB. They reject empty bodies, unknown fields, multiple JSON values, and `null` for every listing field. Invalid request syntax returns `400`; field validation returns `422` with a field map.
 
 ### PATCH `/api/v1/listings/{listing_id}`
 
@@ -332,6 +340,8 @@ active,reserved
 Authenticated.
 
 Supports all statuses.
+
+Optional `status` filters one seller-controlled status. Results use stable `(updated_at, id)` descending cursor pagination. Removed listings are excluded.
 
 ## 10. Discord catalog export
 
