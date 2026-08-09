@@ -67,6 +67,20 @@ SESSION_COOKIE_NAME
 
 PostgreSQL is pinned to 18.4 in deployment configuration and is updated through normal reviewed dependency maintenance.
 
+### Discord OAuth configuration
+
+Local development uses the untracked `.env` file. `make server` reads it only when `APP_ENV` is unset or `development`, and Docker Compose uses it for variable substitution. Neither path overrides variables injected by the process or deployment platform. `.env` is excluded from Git and Docker build context.
+
+Before a production deployment, choose the final HTTPS application origin and configure all of the following together:
+
+```text
+APP_ENV=production
+APP_BASE_URL=https://<production-origin>
+DISCORD_REDIRECT_URI=https://<production-origin>/auth/discord/callback
+```
+
+Inject `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` through the deployment secret store. Then register that exact redirect URL in the existing Discord Developer Portal application. Do not register a placeholder or wildcard callback URL. This production registration remains pending until the production origin is chosen.
+
 ## 4. Migrations
 
 Choose one explicit migration execution strategy:

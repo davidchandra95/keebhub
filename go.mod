@@ -6,6 +6,7 @@ toolchain go1.26.5
 
 require (
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v5 v5.1.1
 	github.com/pressly/goose/v3 v3.27.3
 	go.uber.org/zap v1.27.0

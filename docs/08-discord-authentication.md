@@ -211,6 +211,20 @@ SESSION_COOKIE_NAME
 
 Never commit client secret.
 
+### Local Developer Portal setup
+
+Use the existing Discord Developer Portal application whose client ID matches `DISCORD_CLIENT_ID`.
+
+Register exactly this OAuth redirect URL for local development:
+
+```text
+http://localhost:8080/auth/discord/callback
+```
+
+Do not create a bot, enable privileged intents, add bot permissions, or request scopes beyond `identify` for authentication.
+
+For native development, `make server` loads an untracked `.env` file when `APP_ENV` is unset or `development`. The file supplies only missing variables, so explicitly injected environment values take precedence. Docker Compose reads the same local `.env` file before starting containers. A missing `.env` is allowed for public-only development; malformed local files stop startup without logging their values.
+
 ## 13. Failure cases
 
 Handle:
