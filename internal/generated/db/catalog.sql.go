@@ -386,6 +386,130 @@ func (q *Queries) ListOwnedListings(ctx context.Context, arg ListOwnedListingsPa
 	return items, nil
 }
 
+const listSellerListings = `-- name: ListSellerListings :many
+SELECT listings.id,
+       listings.seller_id,
+       listings.category_id,
+       listings.title,
+       listings.description,
+       listings.price_idr,
+       listings.quantity,
+       listings.condition,
+       listings.status,
+       listings.moderation_status,
+       listings.negotiable,
+       listings.created_at,
+       listings.updated_at,
+       categories.slug AS category_slug,
+       categories.name AS category_name,
+       users.handle AS seller_handle,
+       users.display_name AS seller_display_name,
+       users.avatar_url AS seller_avatar_url,
+       users.location AS seller_location,
+       users.bio AS seller_bio
+FROM listings
+JOIN categories ON categories.id = listings.category_id
+JOIN users ON users.id = listings.seller_id
+WHERE listings.seller_id = $1
+  AND listings.moderation_status = 'visible'
+  AND listings.status = ANY($2::text[])
+  AND ($3::text IS NULL OR categories.slug = $3::text)
+  AND (
+      $4::integer IS NULL
+      OR CASE listings.status WHEN 'active' THEN 0 WHEN 'reserved' THEN 1 ELSE 2 END > $4::integer
+      OR (
+          CASE listings.status WHEN 'active' THEN 0 WHEN 'reserved' THEN 1 ELSE 2 END = $4::integer
+          AND (listings.updated_at, listings.id) < ($5::timestamptz, $6::bigint)
+      )
+  )
+ORDER BY CASE listings.status WHEN 'active' THEN 0 WHEN 'reserved' THEN 1 ELSE 2 END,
+         listings.updated_at DESC,
+         listings.id DESC
+LIMIT $7::integer
+`
+
+type ListSellerListingsParams struct {
+	SellerID         int64              `json:"seller_id"`
+	Statuses         []string           `json:"statuses"`
+	CategorySlug     *string            `json:"category_slug"`
+	CursorStatusRank *int32             `json:"cursor_status_rank"`
+	CursorUpdatedAt  pgtype.Timestamptz `json:"cursor_updated_at"`
+	CursorID         *int64             `json:"cursor_id"`
+	PageLimit        int32              `json:"page_limit"`
+}
+
+type ListSellerListingsRow struct {
+	ID                int64              `json:"id"`
+	SellerID          int64              `json:"seller_id"`
+	CategoryID        int64              `json:"category_id"`
+	Title             string             `json:"title"`
+	Description       string             `json:"description"`
+	PriceIdr          int64              `json:"price_idr"`
+	Quantity          int32              `json:"quantity"`
+	Condition         string             `json:"condition"`
+	Status            string             `json:"status"`
+	ModerationStatus  string             `json:"moderation_status"`
+	Negotiable        bool               `json:"negotiable"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	CategorySlug      string             `json:"category_slug"`
+	CategoryName      string             `json:"category_name"`
+	SellerHandle      string             `json:"seller_handle"`
+	SellerDisplayName string             `json:"seller_display_name"`
+	SellerAvatarUrl   *string            `json:"seller_avatar_url"`
+	SellerLocation    *string            `json:"seller_location"`
+	SellerBio         *string            `json:"seller_bio"`
+}
+
+func (q *Queries) ListSellerListings(ctx context.Context, arg ListSellerListingsParams) ([]ListSellerListingsRow, error) {
+	rows, err := q.db.Query(ctx, listSellerListings,
+		arg.SellerID,
+		arg.Statuses,
+		arg.CategorySlug,
+		arg.CursorStatusRank,
+		arg.CursorUpdatedAt,
+		arg.CursorID,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSellerListingsRow{}
+	for rows.Next() {
+		var i ListSellerListingsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SellerID,
+			&i.CategoryID,
+			&i.Title,
+			&i.Description,
+			&i.PriceIdr,
+			&i.Quantity,
+			&i.Condition,
+			&i.Status,
+			&i.ModerationStatus,
+			&i.Negotiable,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.CategorySlug,
+			&i.CategoryName,
+			&i.SellerHandle,
+			&i.SellerDisplayName,
+			&i.SellerAvatarUrl,
+			&i.SellerLocation,
+			&i.SellerBio,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchListingsNewest = `-- name: SearchListingsNewest :many
 SELECT listings.id,
        listings.seller_id,

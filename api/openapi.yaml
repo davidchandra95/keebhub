@@ -7,7 +7,7 @@ info:
     identifier: LicenseRef-Proprietary
   description: >-
     Public HTTP contract for KeebHub v1. Health, readiness, Discord authentication,
-    logout, current-user read, and catalog foundation are implemented. Operations marked
+    logout, current-user profile, seller catalog, and catalog foundation are implemented. Operations marked
     planned are implemented by later vertical slices without changing this contract unless a
     reviewed contract change is made.
 servers:
@@ -150,7 +150,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
     patch:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Profile]
       operationId: updateCurrentUser
       summary: Update optional profile fields
@@ -179,6 +179,12 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/RequestTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
   /api/v1/categories:
     get:
       x-implementation-status: implemented
@@ -367,7 +373,7 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
   /api/v1/users/{handle}:
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: getSellerProfile
       summary: Get a public seller profile
@@ -383,12 +389,12 @@ paths:
                 required: [user]
                 properties:
                   user:
-                    $ref: "#/components/schemas/PublicUser"
+                    $ref: "#/components/schemas/SellerProfile"
         "404":
           $ref: "#/components/responses/NotFound"
   /api/v1/users/{handle}/listings:
     get:
-      x-implementation-status: planned
+      x-implementation-status: implemented
       tags: [Catalog]
       operationId: listSellerListings
       summary: List public seller listings
@@ -768,7 +774,7 @@ components:
       required: false
       schema:
         type: string
-        enum: [active, reserved]
+        enum: [active, reserved, sold]
     OwnedStatusFilter:
       name: status
       in: query
@@ -897,7 +903,7 @@ components:
     User:
       type: object
       additionalProperties: false
-      required: [id, handle, discord_username, display_name]
+      required: [id, handle, discord_username, display_name, created_at]
       properties:
         id:
           $ref: "#/components/schemas/ID"
@@ -916,6 +922,8 @@ components:
         bio:
           type: [string, "null"]
           maxLength: 500
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
     PublicUser:
       type: object
       additionalProperties: false
@@ -936,6 +944,31 @@ components:
         bio:
           type: [string, "null"]
           maxLength: 500
+    SellerProfile:
+      type: object
+      additionalProperties: false
+      required: [id, handle, display_name, avatar_url, location, bio, created_at, active_listing_count]
+      properties:
+        id:
+          $ref: "#/components/schemas/ID"
+        handle:
+          type: string
+        display_name:
+          type: string
+        avatar_url:
+          type: [string, "null"]
+          format: uri
+        location:
+          type: [string, "null"]
+          maxLength: 100
+        bio:
+          type: [string, "null"]
+          maxLength: 500
+        created_at:
+          $ref: "#/components/schemas/Timestamp"
+        active_listing_count:
+          type: integer
+          minimum: 0
     UpdateProfileRequest:
       type: object
       additionalProperties: false

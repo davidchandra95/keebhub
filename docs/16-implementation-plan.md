@@ -237,8 +237,8 @@ A fresh server can be provisioned using documented steps.
 - [x] My listings
 - [x] Public listing
 - [x] Search/filter/sort
-- [ ] Seller profile
-- [ ] Seller catalog
+- [x] Seller profile
+- [x] Seller catalog
 
 ### Export
 

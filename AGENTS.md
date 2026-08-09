@@ -41,7 +41,7 @@ The repository currently contains:
 - liveness and database readiness endpoints;
 - a minimal React application with health, login, and not-found pages.
 
-Catalog, marketplace discovery, seller profiles, Discord catalog export, chat, SSE, reports, and moderation are documented but not yet implemented. The OpenAPI contract includes planned v1 endpoints, so a documented endpoint is not proof that its code exists.
+The catalog API foundation covers categories, listing management, public listing detail, and marketplace discovery. Seller profiles and public seller catalogs are also implemented. The React client remains at its minimal login and health baseline. Discord catalog export, chat, SSE, reports, and moderation remain documented planned slices. The OpenAPI contract includes planned v1 endpoints, so a documented endpoint is not proof that its code exists.
 
 When a vertical slice becomes complete, update this section, `README.md`, and the checklist in `docs/16-implementation-plan.md` as part of the same change.
 

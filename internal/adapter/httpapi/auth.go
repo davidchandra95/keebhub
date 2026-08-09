@@ -64,6 +64,7 @@ type userResponse struct {
 	AvatarURL       *string `json:"avatar_url"`
 	Location        *string `json:"location"`
 	Bio             *string `json:"bio"`
+	CreatedAt       string  `json:"created_at"`
 }
 
 func newAuthHandlers(cfg Config, secureCookies bool) authHandlers {
@@ -220,15 +221,15 @@ func (h authHandlers) me(c *echo.Context) error {
 	if !ok {
 		return echo.ErrUnauthorized
 	}
-	return c.JSON(http.StatusOK, currentUserResponse{User: userResponse{
-		ID:              fmt.Sprintf("%d", user.ID),
-		Handle:          user.Handle,
-		DiscordUsername: user.DiscordUsername,
-		DisplayName:     user.DisplayName,
-		AvatarURL:       user.AvatarURL,
-		Location:        user.Location,
-		Bio:             user.Bio,
-	}})
+	return c.JSON(http.StatusOK, currentUserResponse{User: userResponseFromDomain(user)})
+}
+
+func userResponseFromDomain(user domain.User) userResponse {
+	return userResponse{
+		ID: fmt.Sprintf("%d", user.ID), Handle: user.Handle, DiscordUsername: user.DiscordUsername,
+		DisplayName: user.DisplayName, AvatarURL: user.AvatarURL, Location: user.Location, Bio: user.Bio,
+		CreatedAt: formatTimestamp(user.CreatedAt),
+	}
 }
 
 func (h authHandlers) sessionMiddleware() echo.MiddlewareFunc {

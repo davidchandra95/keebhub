@@ -68,12 +68,15 @@ func run() (returnErr error) {
 	auth := app.NewAuthService(discordOAuth, postgresadapter.NewAuthStore(pool))
 	catalogStore := postgresadapter.NewCatalogStore(pool)
 	catalog := app.NewCatalogService(catalogStore, catalogStore, time.Now)
+	sellerStore := postgresadapter.NewSellerStore(pool)
+	seller := app.NewSellerService(sellerStore, sellerStore, time.Now)
 
 	handler := httpapi.New(httpapi.Config{
 		AppBaseURL:        cfg.BaseURL,
 		Auth:              auth,
 		BodyLimit:         cfg.HTTPBodyLimit,
 		Catalog:           catalog,
+		Seller:            seller,
 		Logger:            logger,
 		Pinger:            pool,
 		ReadinessTimeout:  cfg.ReadinessTimeout,

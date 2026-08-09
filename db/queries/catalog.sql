@@ -199,6 +199,47 @@ WHERE listings.seller_id = sqlc.arg(seller_id)
 ORDER BY listings.updated_at DESC, listings.id DESC
 LIMIT sqlc.arg(page_limit)::integer;
 
+-- name: ListSellerListings :many
+SELECT listings.id,
+       listings.seller_id,
+       listings.category_id,
+       listings.title,
+       listings.description,
+       listings.price_idr,
+       listings.quantity,
+       listings.condition,
+       listings.status,
+       listings.moderation_status,
+       listings.negotiable,
+       listings.created_at,
+       listings.updated_at,
+       categories.slug AS category_slug,
+       categories.name AS category_name,
+       users.handle AS seller_handle,
+       users.display_name AS seller_display_name,
+       users.avatar_url AS seller_avatar_url,
+       users.location AS seller_location,
+       users.bio AS seller_bio
+FROM listings
+JOIN categories ON categories.id = listings.category_id
+JOIN users ON users.id = listings.seller_id
+WHERE listings.seller_id = sqlc.arg(seller_id)
+  AND listings.moderation_status = 'visible'
+  AND listings.status = ANY(sqlc.arg(statuses)::text[])
+  AND (sqlc.narg(category_slug)::text IS NULL OR categories.slug = sqlc.narg(category_slug)::text)
+  AND (
+      sqlc.narg(cursor_status_rank)::integer IS NULL
+      OR CASE listings.status WHEN 'active' THEN 0 WHEN 'reserved' THEN 1 ELSE 2 END > sqlc.narg(cursor_status_rank)::integer
+      OR (
+          CASE listings.status WHEN 'active' THEN 0 WHEN 'reserved' THEN 1 ELSE 2 END = sqlc.narg(cursor_status_rank)::integer
+          AND (listings.updated_at, listings.id) < (sqlc.narg(cursor_updated_at)::timestamptz, sqlc.narg(cursor_id)::bigint)
+      )
+  )
+ORDER BY CASE listings.status WHEN 'active' THEN 0 WHEN 'reserved' THEN 1 ELSE 2 END,
+         listings.updated_at DESC,
+         listings.id DESC
+LIMIT sqlc.arg(page_limit)::integer;
+
 -- name: SearchListingsNewest :many
 SELECT listings.id,
        listings.seller_id,
