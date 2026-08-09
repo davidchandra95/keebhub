@@ -40,8 +40,13 @@ The repository currently contains:
 - database-backed hashed sessions, session middleware, logout, and `GET /api/v1/me`;
 - liveness and database readiness endpoints;
 - a minimal React application with health, login, and not-found pages.
+- API-only catalog foundation: seeded categories; owned listing create, partial edit,
+  status changes, and pagination; public listing detail and marketplace search.
 
-Catalog, marketplace discovery, seller profiles, Discord catalog export, chat, SSE, reports, and moderation are documented but not yet implemented. The OpenAPI contract includes planned v1 endpoints, so a documented endpoint is not proof that its code exists.
+Seller profiles, Discord catalog export, chat, SSE, reports, moderation operations,
+and catalog frontend pages are documented but not yet implemented. The OpenAPI
+contract includes planned v1 endpoints, so a documented endpoint is not proof that
+its code exists.
 
 When a vertical slice becomes complete, update this section, `README.md`, and the checklist in `docs/16-implementation-plan.md` as part of the same change.
 
