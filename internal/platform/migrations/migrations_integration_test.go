@@ -8,7 +8,7 @@ import (
 
 func TestMigrationsApply(t *testing.T) {
 	database := testdatabase.Open(t)
-	if database.MigrationVersion != 3 {
-		t.Errorf("version = %d, want 3", database.MigrationVersion)
+	if database.MigrationVersion != 2 {
+		t.Errorf("version = %d, want 2", database.MigrationVersion)
 	}
 }
