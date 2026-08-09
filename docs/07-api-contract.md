@@ -172,8 +172,6 @@ This is a strict partial update. Omitting a field leaves it unchanged. `null` or
 
 Public.
 
-Returns active categories in `sort_order, id` order.
-
 ```json
 {
   "items": [
@@ -211,16 +209,6 @@ Default public states:
 active,reserved
 ```
 
-`q` and `category` are trimmed. Empty normalized values are ignored. Text search
-matches literal, case-insensitive substrings in title or description, so `%`,
-`_`, and backslash do not act as wildcard characters. `sort` defaults to
-`newest`; `limit` defaults to 20 and is at most 100.
-
-The opaque cursor is bound to the normalized filters and selected sort. A
-malformed cursor or a cursor reused with different filters or sort returns
-`400 Bad Request`. Changing only `limit` between pages is allowed.
-`next_cursor` is `null` when there is no following page.
-
 Response:
 
 ```json
@@ -233,7 +221,6 @@ Response:
       "price_idr": 3000000,
       "quantity": 1,
       "category": {
-        "id": "1",
         "slug": "keyboard",
         "name": "Keyboard"
       },
@@ -261,8 +248,7 @@ Public.
 
 Sold listings remain accessible.
 
-Archived listings are returned only to the listing owner. Other callers receive
-`404 Not Found`. Conversation access is not part of this phase.
+Archived listings are returned only to the listing owner or an authenticated participant in an existing conversation about that listing. Other callers receive `404 Not Found`.
 
 Listings removed by moderation are unavailable through normal application endpoints, including to the owner and conversation participants.
 
@@ -286,11 +272,6 @@ Response: `201 Created`.
 
 The category must exist and be active. Title, description, price, and quantity use the limits in the security and OpenAPI contracts.
 
-Listing writes require `application/json`, reject unknown fields, multiple JSON
-values, empty bodies, explicit `null`, and bodies larger than 32 KiB. The
-optional create defaults are empty description, quantity 1, and `negotiable`
-false.
-
 ### PATCH `/api/v1/listings/{listing_id}`
 
 Owner only.
@@ -307,9 +288,6 @@ Partial update.
 
 Omitted fields are unchanged. A present listing field cannot be `null`; `description` can be the empty string.
 
-An empty patch object is rejected. Seller status changes are not accepted by this
-endpoint.
-
 ### POST `/api/v1/listings/{listing_id}/status`
 
 Owner only.
@@ -321,12 +299,6 @@ Owner only.
 ```
 
 Recommended instead of permitting arbitrary status changes inside the generic edit endpoint.
-
-Allowed status changes are `active` to `reserved`, `sold`, or `archived`;
-`reserved` to `active`, `sold`, or `archived`; `sold` to `active` or
-`archived`; and `archived` to `active`. Repeating the current status is a
-successful no-op and does not change `updated_at`. Other transitions return
-`409 Conflict`.
 
 ## 8. Seller catalog
 
@@ -359,10 +331,7 @@ active,reserved
 
 Authenticated.
 
-Supports an optional `status` filter across all four seller statuses and stable
-cursor pagination by `updated_at DESC, id DESC`. Removed listings are not
-returned. The cursor is bound to the selected status, and `next_cursor` is
-`null` when there is no following page.
+Supports all statuses.
 
 ## 10. Discord catalog export
 
